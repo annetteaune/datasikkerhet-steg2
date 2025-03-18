@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /feedback-api/
+
+# Ensure the request isn't for a real file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Handle API requests
+RewriteRule ^api(/.*)?$ api/index.php [L,QSA]
+
+# For debugging - log rewrite attempts
+RewriteLog "/var/log/apache2/rewrite.log"
+RewriteLogLevel 3

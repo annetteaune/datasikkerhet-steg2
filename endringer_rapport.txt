@@ -1,0 +1,487 @@
+ENDRINGER I DATABASETILKOBLING OG KODEBASE
+
+1. Endringer i databasetilkobling (lib/db.php):
+- Endret databasenavn fra "database" til "db2"
+- Lagt til nye brukere med spesifikke rettigheter for hver rolle:
+  * db2_admin (full tilgang)
+  * db2_student (begrenset tilgang)
+  * db2_lecturer (begrenset tilgang)
+  * db2_guest (begrenset tilgang)
+- Implementert rollebasert tilkoblingshåndtering:
+  * Ny funksjon get_db_connection($role) for å opprette tilkobling basert på rolle
+  * Ny funksjon close_db_connection($conn) for sikker lukking av tilkoblinger
+  * Forbedret feilhåndtering med logging og exception throwing
+  * Standard rolle satt til 'guest' hvis ugyldig rolle spesifiseres
+
+2. Endringer i login_action_student.php:
+- Implementert bruk av lagret prosedyre 'user_login' for innlogging
+- Lagt til rollebasert databasetilkobling med student-rolle
+- Forbedret feilhåndtering med try-catch og logging
+- Lagt til flere sesjonvariabler for brukerinfo
+- Oppdatert til norsk språk i feilmeldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Lagt til validering av brukertype i responsen
+
+3. Endringer i login_action_foreleser.php:
+- Implementert bruk av lagret prosedyre 'user_login' for innlogging
+- Lagt til rollebasert databasetilkobling med lecturer-rolle
+- Forbedret feilhåndtering med try-catch og logging
+- Utvidet sesjonvariabler med mer brukerinfo
+- Oppdatert til norsk språk i feilmeldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Lagt til validering av brukertype i responsen
+- Forbedret feilmeldingshåndtering med redirect og sesjonsmeldinger
+
+4. Endringer i register_student_action.php:
+- Implementert bruk av lagret prosedyre 'register_student' for registrering
+- Lagt til rollebasert databasetilkobling med admin-rolle for registrering
+- Forbedret validering av brukerdata:
+  * Sjekk av tomme felt
+  * Passordbekreftelse
+  * Minimum passordlengde
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Bruker sesjonvariabler for feilmeldinger
+- Oppdatert til norsk språk i alle meldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret suksess/feil-redirects med informative meldinger
+
+5. Endringer i register_teacher_action.php:
+- Implementert bruk av lagret prosedyre 'register_lecturer_with_course' for registrering
+- Lagt til rollebasert databasetilkobling med admin-rolle for registrering
+- Forbedret validering av brukerdata:
+  * Sjekk av tomme felt
+  * Passordbekreftelse
+  * Minimum passordlengde
+  * Validering av bildefil og filtype
+- Implementert forbedret bildehåndtering:
+  * Sikker opplasting av profilbilde
+  * Automatisk sletting av bilde ved feil
+  * Validering av filtyper og opplastingsfeil
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Bruker sesjonvariabler for feilmeldinger
+- Forbedret emnekodegenerering
+- Oppdatert til norsk språk i alle meldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret suksess/feil-redirects med informative meldinger
+
+6. Endringer i student_send_melding.php:
+- Implementert bruk av lagret prosedyre 'send_message' for meldingssending
+- Lagt til rollebasert databasetilkobling med student-rolle
+- Forbedret validering av inndata:
+  * Sjekk av tomme felt
+  * Nullsikker håndtering av POST-data
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Bruker sesjonvariabler for feilmeldinger
+- Oppdatert til norsk språk i alle meldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret suksess/feil-redirects med informative meldinger
+- Fjernet redundant kode for student_emner relasjon (nå håndtert i prosedyren)
+
+7. Endringer i svar.php:
+- Implementert bruk av lagret prosedyre 'send_response' for svar på meldinger
+- Lagt til rollebasert databasetilkobling med lecturer-rolle
+- Forbedret validering av inndata:
+  * Sjekk av tomme felt
+  * Nullsikker håndtering av POST-data
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Bruker sesjonvariabler for feilmeldinger
+- Oppdatert til norsk språk i alle meldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret suksess/feil-redirects med informative meldinger
+- Fjernet unødvendig kode og forbedret kodekvalitet
+
+8. Endringer i submit_comment.php:
+- Implementert bruk av lagret prosedyre 'add_comment' for kommentarer
+- Lagt til rollebasert databasetilkobling med guest-rolle
+- Forbedret validering av inndata:
+  * Bruk av filter_input for sikker validering av heltall
+  * Nullsikker håndtering av POST-data
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Bruker sesjonvariabler for feilmeldinger
+- Oppdatert til norsk språk i alle meldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret suksess/feil-redirects med informative meldinger
+- Oppdatert filbaner for korrekt navigering
+
+9. Endringer i submit_rapport.php:
+- Implementert bruk av lagret prosedyre 'report_message' for rapportering
+- Lagt til rollebasert databasetilkobling med guest-rolle
+- Forbedret validering av inndata:
+  * Bruk av filter_input for sikker validering av heltall
+  * Nullsikker håndtering av POST-data
+  * Forbedret håndtering av valgfri student_id
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Bruker sesjonvariabler for feilmeldinger
+- Oppdatert til norsk språk i alle meldinger
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret suksess/feil-redirects med informative meldinger
+- Oppdatert filbaner for korrekt navigering
+
+10. Endringer i dashboard.php:
+- Implementert bruk av lagrede prosedyrer:
+  * get_all_subjects for å hente emner
+  * get_student_messages for å hente studentens meldinger
+- Lagt til rollebasert databasetilkobling med student-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Omdirigering til error.php ved kritiske feil
+- Oppdatert til norsk språk i alle meldinger og tekster
+- Forbedret brukergrensesnitt:
+  * Lagt til success/error meldinger med sesjonvariabler
+  * Forbedret formularlabels og placeholder-tekster
+  * Oppdatert knappetekster til norsk
+- Implementert sikker håndtering av databasetilkoblinger
+- Lagt til copyright informasjon i footer
+- Forbedret HTML-struktur og språkstøtte
+
+11. Endringer i dashboard_foreleser.php:
+- Implementert bruk av lagrede prosedyrer:
+  * get_all_subjects for å hente emner
+  * get_lecturer_unanswered_messages for å hente ubesvarte meldinger
+- Lagt til rollebasert databasetilkobling med lecturer-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Omdirigering til error.php ved kritiske feil
+- Oppdatert til norsk språk i alle meldinger og tekster
+- Forbedret brukergrensesnitt:
+  * Lagt til success/error meldinger med sesjonvariabler
+  * Forbedret formularlabels og placeholder-tekster
+  * Oppdatert knappetekster til norsk
+  * Forbedret visning av meldingsforhåndsvisning
+- Implementert sikker håndtering av databasetilkoblinger
+- Oppdatert passordbytte-funksjonalitet:
+  * Endret til korrekt filsti (bytt_foreleser_pw.php)
+  * Forbedret feilmeldingshåndtering
+  * Oppdatert labels til norsk
+- Lagt til copyright informasjon i footer
+- Forbedret HTML-struktur og språkstøtte
+- Fjernet unødvendig JavaScript-kode
+
+12. Endringer i dashboard_gjest.php:
+- Implementert bruk av lagrede prosedyrer:
+  * get_course_messages for å hente meldinger for emnet
+  * get_message_comments for å hente kommentarer for hver melding
+- Lagt til rollebasert databasetilkobling med guest-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Omdirigering til error.php ved kritiske feil
+  * Separat feilhåndtering for kommentarhenting
+- Oppdatert til norsk språk i alle meldinger og tekster
+- Forbedret brukergrensesnitt:
+  * Lagt til success/error meldinger med sesjonvariabler
+  * Forbedret formularlabels og placeholder-tekster
+  * Oppdatert knappetekster til norsk
+  * Forbedret styling med CSS:
+    - Konsistent padding og margins
+    - Avrundede hjørner
+    - Hover-effekter på knapper
+    - Bedre visuell hierarki
+    - Responsivt design
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret navigasjon:
+  * Fjernet unødvendige lenker
+  * Lagt til logo-lenke til hovedsiden
+- Forbedret profilbildehåndtering med null-sjekk
+- Lagt til copyright informasjon i footer
+- Forbedret HTML-struktur og språkstøtte
+- Optimalisert kodestruktur og fjernet duplisert kode
+
+13. Endringer i student_logged_in.php:
+- Implementert bruk av lagrede prosedyrer:
+  * student_profile_view for å hente studentprofil
+  * student_courses_view for å hente studentens emner
+- Lagt til rollebasert databasetilkobling med student-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Omdirigering til error.php ved kritiske feil
+- Oppdatert til norsk språk i alle meldinger og tekster
+- Forbedret brukergrensesnitt:
+  * Lagt til success/error meldinger med sesjonvariabler
+  * Forbedret formularlabels og placeholder-tekster
+  * Oppdatert knappetekster til norsk
+  * Forbedret styling med CSS:
+    - Responsivt grid-system for emner
+    - Hover-effekter og animasjoner
+    - Konsistent fargepalett
+    - Forbedret typografi og spacing
+    - Skyggeeffekter for dybde
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret skjemavalidering:
+  * Lagt til pattern-validering for PIN-kode
+  * Forbedret feilmeldinger og hjelpetekst
+- Oppdatert URL-parametere til norsk (emne_id)
+- Lagt til copyright informasjon i footer
+- Forbedret HTML-struktur og språkstøtte
+- Optimalisert kodestruktur og fjernet duplisert kode
+
+14. Endringer i foreleser_logged_in.php:
+- Implementert bruk av lagrede prosedyrer:
+  * lecturer_profile_view for å hente foreleserprofil
+  * lecturer_courses_view for å hente foreleserens emner
+- Lagt til rollebasert databasetilkobling med lecturer-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for håndtering av databasefeil
+  * Logging av feil
+  * Omdirigering til error.php ved kritiske feil
+- Oppdatert til norsk språk i alle meldinger og tekster
+- Forbedret brukergrensesnitt:
+  * Lagt til success/error meldinger med sesjonvariabler
+  * Forbedret formularlabels og placeholder-tekster
+  * Oppdatert knappetekster til norsk
+  * Forbedret styling med CSS:
+    - Responsivt grid-system for emner
+    - Hover-effekter og animasjoner
+    - Konsistent fargepalett
+    - Forbedret typografi og spacing
+    - Skyggeeffekter for dybde
+    - Spesiell styling for PIN-koder
+    - Forbedret visning av studentantall
+- Implementert sikker håndtering av databasetilkoblinger
+- Forbedret skjemavalidering:
+  * Lagt til pattern-validering for PIN-kode (4 siffer)
+  * Lagt til pattern-validering for emne kode (3 bokstaver + 3 tall)
+  * Lagt til maxlength for emne navn
+  * Forbedret feilmeldinger og hjelpetekst
+- Oppdatert URL-parametere til norsk (emne_id)
+- Lagt til copyright informasjon i footer
+- Forbedret HTML-struktur og språkstøtte
+- Optimalisert kodestruktur og fjernet duplisert kode
+
+15. Endringer i meldinger.php:
+- Implementert bruk av lagrede prosedyrer:
+  * get_subject_info for å hente emne informasjon
+  * get_course_messages for å hente meldinger
+  * get_message_comments for å hente kommentarer til meldinger
+- Lagt til rollebasert databasetilkobling med student/lecturer-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokker for alle databaseoperasjoner
+  * Logging av feil til error_log
+  * Omdirigering til dashboard ved kritiske feil
+  * Visning av feilmeldinger til brukeren
+- Oppdatert til norsk språk i alle meldinger og tekster
+- Forbedret brukergrensesnitt:
+  * Lagt til success/error meldinger med sesjonvariabler
+  * Forbedret meldingsvisning med kommentarer
+  * Lagt til maxlength på meldinger (1000 tegn)
+  * Lagt til hjelpetekst for tekstområder
+  * Forbedret styling av meldinger og kommentarer
+- Oppdatert URL-parametere til norsk (emne_id)
+- Implementert sikker lukking av databasetilkoblinger
+- Forbedret HTML-struktur og språkstøtte
+- Optimalisert kodestruktur og fjernet duplisert kode
+
+16. Endringer i login_gjest.php:
+- Implementert bruk av lagrede prosedyrer:
+  * verify_course_pin for å verifisere PIN-kode og hente emne- og foreleserinformasjon
+  * register_guest for å registrere gjest og hente gjest_id
+- Lagt til rollebasert databasetilkobling med guest-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokk for alle operasjoner
+  * Validering av PIN-kode format (må være 4 siffer)
+  * Logging av feil til error_log
+  * Visning av feilmeldinger til brukeren via sesjonsvariabler
+- Forbedret sikkerhet:
+  * Validering av input før databaseoperasjoner
+  * Sikker håndtering av databasetilkoblinger
+  * Beskyttelse mot SQL-injeksjon via prepared statements
+- Oppdatert til norsk språk i alle feilmeldinger
+- Forbedret kodestruktur:
+  * Bedre organisering av koden i logiske seksjoner
+  * Konsekvent feilhåndtering
+  * Ryddigere håndtering av sesjonsvariabler
+  * Sikker lukking av databasetilkoblinger
+
+17. Endringer i bytt_pw.php og bytt_foreleser_pw.php:
+- Implementert bruk av lagrede prosedyrer:
+  * change_student_password for å endre studentpassord
+  * change_lecturer_password for å endre foreleserpassord
+- Lagt til rollebasert databasetilkobling:
+  * Student-rolle for bytt_pw.php
+  * Lecturer-rolle for bytt_foreleser_pw.php
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokker for alle operasjoner
+  * Validering av passordkrav:
+    - Minimum 8 tegn
+    - Minst én stor bokstav
+    - Minst én liten bokstav
+    - Minst ett tall
+  * Logging av feil til error_log
+  * Visning av feilmeldinger til brukeren via sesjonsvariabler
+- Forbedret sikkerhet:
+  * Validering av input før databaseoperasjoner
+  * Sikker håndtering av databasetilkoblinger
+  * Beskyttelse mot SQL-injeksjon via prepared statements
+  * Konsekvent validering av sesjon og brukerrettigheter
+- Oppdatert til norsk språk i alle meldinger
+- Forbedret kodestruktur:
+  * Bedre organisering av koden i logiske seksjoner
+  * Konsekvent feilhåndtering
+  * Ryddigere håndtering av sesjonsvariabler
+  * Sikker lukking av databasetilkoblinger
+
+18. Endringer i API.php:
+- Implementert bruk av lagrede prosedyrer for alle databaseoperasjoner:
+  * get_student_profile
+  * get_lecturer_profile
+  * register_student
+  * register_lecturer
+  * request_password_reset
+  * change_student_password
+  * change_lecturer_password
+  * get_course_info
+  * get_available_courses
+  * authenticate_user
+  * send_message
+  * get_course_messages_with_responses
+  * add_response
+  * add_comment
+  * report_message
+- Lagt til rollebasert databasetilkobling med api-rolle
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokker for alle metoder
+  * Logging av feil til error_log
+  * Konsekvent feilhåndtering med informative meldinger
+  * Transaksjonshåndtering for komplekse operasjoner
+- Forbedret sikkerhet:
+  * Validering av input før databaseoperasjoner
+  * Sikker håndtering av databasetilkoblinger
+  * Beskyttelse mot SQL-injeksjon via prepared statements
+  * Sikker håndtering av fileopplasting
+- Oppdatert til norsk språk i alle meldinger
+- Forbedret kodestruktur:
+  * Bedre organisering av metoder
+  * Konsekvent returformat for API-responser
+  * Ryddigere håndtering av feilsituasjoner
+  * Forbedret dokumentasjon av metodene
+
+19. Endringer i Database.php:
+- Implementert rollebasert tilkobling med følgende roller:
+  * student_user - for studenttilgang
+  * lecturer_user - for forelesertilgang
+  * guest_user - for gjestetilgang
+  * api_user - for API-tilgang
+- Lagt til konfigurasjon for hver rolle:
+  * Separate brukernavn og passord
+  * Tilgang til db2 database
+  * Host-konfigurasjon
+- Implementert forbedret tilkoblingshåndtering:
+  * Lazy loading av tilkoblinger
+  * Gjenbruk av eksisterende tilkoblinger
+  * Automatisk lukking av tilkoblinger
+  * Ping-sjekk for tilkoblingsvalidering
+- Implementert forbedret feilhåndtering:
+  * Try-catch blokker for tilkoblingsoperasjoner
+  * Logging av tilkoblingsfeil
+  * Validering av roller
+  * Informative feilmeldinger
+- Forbedret sikkerhet:
+  * Separate databasebrukere med begrensede rettigheter
+  * Sikker håndtering av tilkoblingsdetaljer
+  * Automatisk lukking av tilkoblinger i destructor
+- Forbedret kodestruktur:
+  * Bedre organisering av konfigurasjonsdata
+  * Ryddigere håndtering av tilkoblinger
+  * Forbedret dokumentasjon
+
+20. Oppdateringer i register_teacher_action.php:
+- Forbedret PIN-kode validering:
+  * Implementert validering av PIN-kode format (må være nøyaktig 4 siffer)
+  * Lagt til sjekk for eksisterende PIN-koder før registrering
+  * Forbedret feilmeldinger relatert til PIN-kode
+- Forbedret bildehåndtering:
+  * Validering av bildemappe eksistens og rettigheter
+  * Bedre feilhåndtering ved opplasting av bilder
+  * Automatisk opprydding av bilder ved feil
+- Implementert transaksjonshåndtering:
+  * Begin transaction før registrering
+  * Rollback ved feil
+  * Commit ved vellykket registrering
+- Forbedret feilhåndtering:
+  * Try-catch blokker for alle kritiske operasjoner
+  * Spesifikke feilmeldinger for ulike scenarioer
+  * Logging av feil til error_log
+  * Ryddig håndtering av databasetilkoblinger
+- Forbedret validering av brukerdata:
+  * Validering av alle påkrevde felt
+  * Sjekk av passordmatch og lengde
+  * Validering av e-postformat
+- Oppdatert til norsk språk i alle meldinger
+- Implementert "Commands out of sync" fix:
+  * Håndtering av multiple resultsets fra stored procedure
+  * Korrekt lukking av prepared statements
+- Forbedret sikkerhet:
+  * Bruk av prepared statements
+  * Sikker håndtering av filopplasting
+  * Validering av input før databaseoperasjoner
+
+21. Oppdateringer i innloggings- og registreringsfiler:
+
+A. Endringer i login_action_foreleser.php og login_action_student.php:
+- Implementert "Commands out of sync" fix:
+  * Håndtering av multiple resultsets fra stored procedure
+  * Korrekt frigjøring av resultater med result->free()
+  * Loop gjennom alle resultater med more_results() og next_result()
+- Forbedret feilhåndtering:
+  * Mer spesifikke feilmeldinger på norsk
+  * Bedre validering av responsen fra stored procedure
+  * Sikker håndtering av databasetilkoblinger
+
+B. Endringer i register_student_action.php:
+- Implementert "Commands out of sync" fix:
+  * Håndtering av multiple resultsets fra stored procedure
+  * Korrekt frigjøring av resultater
+  * Loop gjennom alle resultater
+- Implementert transaksjonshåndtering:
+  * Begin transaction før registrering
+  * Rollback ved feil
+  * Commit ved vellykket registrering
+- Forbedret feilhåndtering:
+  * Mer spesifikke feilmeldinger på norsk
+  * Bedre validering av responsen fra stored procedure
+  * Nested try-catch blokker for bedre feilhåndtering
+  * Sikker håndtering av databasetilkoblinger
+
+Disse endringene løser problemer med:
+1. "Commands out of sync" feil ved bruk av stored procedures
+2. Manglende transaksjonshåndtering i registreringsprosessen
+3. Uklar feilhåndtering og feilmeldinger
+4. Potensielle minnelekkasjer ved ikke-frigitte resultater
+
+Neste steg:
+1. Teste alle endrede filer
+2. Oppdatere dokumentasjon og brukergrensesnitt
+
+Detaljerte endringer vil bli lagt til etter hvert som de implementeres.
+
+22. Feilretting i innloggingshåndtering:
+- Endret passordhåndtering i login_action_foreleser.php og login_action_student.php:
+  * Fjernet feilaktig hashing av passord før sending til stored procedure
+  * Endret til å sende rått passord til stored procedure for sammenligning med lagret hash
+  * La stored procedure håndtere passordhashing og validering
+- Forbedret feilmeldinger:
+  * Mer presise feilmeldinger ved innloggingsfeil
+  * Bedre logging av innloggingsforsøk
+- Oppdatert kommentarer og dokumentasjon for klarere forståelse av passordhåndtering
+
+Disse endringene løser problemer med:
+1. Feilaktig dobbel hashing av passord som førte til "Invalid credentials" feil
+2. Inkonsistent passordhåndtering mellom registrering og innlogging
+3. Uklar feilhåndtering ved innloggingsforsøk
+
+Detaljerte endringer vil bli lagt til etter hvert som de implementeres. 
