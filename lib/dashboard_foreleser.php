@@ -17,17 +17,31 @@ try {
 
     // Hent ubesvarte meldinger for innlogget foreleser
     $foreleser_id = $_SESSION['foreleser_id'];
+    error_log("Attempting to get messages for foreleser_id: " . $foreleser_id);
+    
     $stmt = $conn->prepare("CALL get_lecturer_unanswered_messages(?)");
     if (!$stmt) {
+        error_log("Failed to prepare get_lecturer_unanswered_messages: " . $conn->error);
         throw new Exception("Feil ved forberedelse av get_lecturer_unanswered_messages");
     }
 
     $stmt->bind_param("i", $foreleser_id);
     if (!$stmt->execute()) {
+        error_log("Failed to execute get_lecturer_unanswered_messages: " . $stmt->error);
         throw new Exception("Feil ved henting av meldinger: " . $stmt->error);
     }
 
     $meldinger_result = $stmt->get_result();
+    if ($meldinger_result) {
+        error_log("Number of messages found: " . $meldinger_result->num_rows);
+        if ($meldinger_result->num_rows > 0) {
+            $first_row = $meldinger_result->fetch_assoc();
+            error_log("First message data: " . print_r($first_row, true));
+            $meldinger_result->data_seek(0);
+        }
+    } else {
+        error_log("No result set returned from get_lecturer_unanswered_messages");
+    }
     $stmt->close();
 
     // Håndter multiple resultsets
@@ -103,7 +117,12 @@ try {
                 <?php endif; ?>
 
                 <div class="messages-section">
-                    <h3>Ubesvarte meldinger</h3>
+                    <h3>Ubesvarte meldinger <?php 
+                        if ($meldinger_result) {
+                            $antall = $meldinger_result->num_rows;
+                            echo "($antall)";
+                        }
+                    ?></h3>
                     <?php if ($meldinger_result && $meldinger_result->num_rows > 0): ?>
                         <form action="svar.php" method="POST">
                             <label for="melding_id">Velg melding å svare på:</label>
@@ -116,45 +135,22 @@ try {
                                             data-full="<?php echo htmlspecialchars($row['innhold']); ?>"
                                         >
                                             <?php 
-                                            echo "Melding #" . htmlspecialchars($row['melding_id']) . " - " . 
-                                                htmlspecialchars(substr($row['innhold'], 0, 30)) . "..."; 
+                                            echo htmlspecialchars($row['emne_navn']) . " - " . 
+                                                 htmlspecialchars($row['student_fornavn']) . " " . 
+                                                 htmlspecialchars($row['student_etternavn']) . ": " . 
+                                                 htmlspecialchars(substr($row['innhold'], 0, 30)) . "..."; 
                                             ?>
                                         </option>
                                     <?php endif; ?>
                                 <?php endwhile; ?>
                             </select>
                             <div id="messagePreview" class="message-preview"></div>
-                            <button type="submit">Svar på melding</button>
+                            <div id="replySection" class="form-group" style="display: none;">
+                                <label for="innhold">Ditt svar:</label>
+                                <textarea name="innhold" id="innhold" rows="4" required></textarea>
+                                <button type="submit">Send svar</button>
+                            </div>
                         </form>
-                    <?php else: ?>
-                        <p>Ingen nye meldinger.</p>
-                    <?php endif; ?>
-                </div>
-
-                <div class="course-messages-section">
-                    <h3>Alle meldinger i dine emner</h3>
-                    <?php if ($emner_meldinger_result && $emner_meldinger_result->num_rows > 0): ?>
-                        <div class="messages-list">
-                            <?php 
-                            $has_valid_messages = false;
-                            while ($row = $emner_meldinger_result->fetch_assoc()): 
-                                if (isset($row['melding_id']) && isset($row['innhold']) && isset($row['emne_navn']) && isset($row['dato'])):
-                                    $has_valid_messages = true;
-                            ?>
-                                <div class="message-card">
-                                    <h4>Melding #<?php echo htmlspecialchars($row['melding_id']); ?></h4>
-                                    <p><?php echo htmlspecialchars($row['innhold']); ?></p>
-                                    <div class="message-meta">
-                                        <span>Emne: <?php echo htmlspecialchars($row['emne_navn']); ?></span>
-                                        <span>Dato: <?php echo htmlspecialchars($row['dato']); ?></span>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                            <?php endwhile; ?>
-                            <?php if (!$has_valid_messages): ?>
-                                <p>Ingen nye meldinger.</p>
-                            <?php endif; ?>
-                        </div>
                     <?php else: ?>
                         <p>Ingen nye meldinger.</p>
                     <?php endif; ?>
@@ -208,12 +204,15 @@ try {
             var selectedOption = this.options[this.selectedIndex];
             var fullMessage = selectedOption.getAttribute('data-full');
             var preview = document.getElementById('messagePreview');
+            var replySection = document.getElementById('replySection');
             
             if (fullMessage && preview) {
                 preview.innerHTML = '<strong>Fullstendig melding:</strong><br>' + fullMessage;
                 preview.style.display = 'block';
-            } else if (preview) {
+                replySection.style.display = 'block';
+            } else {
                 preview.style.display = 'none';
+                replySection.style.display = 'none';
             }
         });
     </script>

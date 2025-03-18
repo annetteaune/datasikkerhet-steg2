@@ -30,17 +30,33 @@ try {
 
     // Hent alle meldinger for innlogget student
     $student_id = $_SESSION['student_id'];
+    error_log("Attempting to get messages for student_id: " . $student_id);
+    
     $stmt = $conn->prepare("CALL get_student_messages(?)");
     if (!$stmt) {
+        error_log("Failed to prepare get_student_messages statement: " . $conn->error);
         throw new Exception("Feil ved forberedelse av get_student_messages");
     }
 
     $stmt->bind_param("i", $student_id);
     if (!$stmt->execute()) {
+        error_log("Failed to execute get_student_messages: " . $stmt->error);
         throw new Exception("Feil ved henting av meldinger");
     }
 
     $meldinger_result = $stmt->get_result();
+    if ($meldinger_result) {
+        error_log("Number of messages found: " . $meldinger_result->num_rows);
+        // Debug first row if exists
+        if ($meldinger_result->num_rows > 0) {
+            $first_row = $meldinger_result->fetch_assoc();
+            error_log("First message data: " . print_r($first_row, true));
+            // Move pointer back to beginning
+            $meldinger_result->data_seek(0);
+        }
+    } else {
+        error_log("No result set returned from get_student_messages");
+    }
     $stmt->close();
 
 } catch (Exception $e) {
@@ -109,11 +125,11 @@ try {
             <div class="container">
                 <div style="max-width: 500px; width: 100%; margin: 0 auto;">
                     <?php 
-                    $has_messages = false;
-                    if ($meldinger_result && $meldinger_result->num_rows > 0): 
+                    $messages_shown = false;
+                    if ($meldinger_result): 
                         while ($row = $meldinger_result->fetch_assoc()):
                             if (isset($row['emne_navn']) && isset($row['innhold']) && isset($row['dato'])):
-                                $has_messages = true;
+                                $messages_shown = true;
                     ?>
                             <div class="message-container">
                                 <h3><?php echo htmlspecialchars($row['emne_navn']); ?></h3>
@@ -134,14 +150,9 @@ try {
                             <?php 
                             endif;
                         endwhile;
-                        
-                        if (!$has_messages):
-                    ?>
-                            <p>Ingen meldinger</p>
-                    <?php
-                        endif;
-                    else: 
-                    ?>
+                    endif;
+
+                    if (!$messages_shown): ?>
                         <p>Ingen meldinger</p>
                     <?php endif; ?>
                 </div>      

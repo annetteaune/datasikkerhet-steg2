@@ -1,0 +1,10 @@
+student kan logge inn
+student kan sende melding
+foreleser kan logge inn
+foreleser kan svare på melding
+
+ikke sjekket:
+endre passord
+legge inn kommentar på melding
+emneside (gjest)
+emneside (logget inn)

@@ -123,3 +123,16 @@ label {
 .logo-link:hover {
   opacity: 0.8;
 }
+
+.messages-section textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.messages-section .form-group {
+  margin: 15px 0;
+}

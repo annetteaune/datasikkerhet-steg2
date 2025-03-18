@@ -12,6 +12,9 @@ require 'db.php';
 // Check if the form was submitted via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
+        // Clear any existing session data
+        $_SESSION = array();
+
         // Retrieve and trim form data
         $email = trim($_POST['email']);
         $password = trim($_POST['password']);
@@ -21,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             throw new Exception("Vennligst fyll ut både e-post og passord.");
         }
 
-        // Get database connection with student role
-        $conn = get_db_connection('student');
+        // Get database connection with guest role for login
+        $conn = get_db_connection('guest');
 
         // Call the user_login stored procedure with raw password
         $stmt = $conn->prepare("CALL user_login(?, ?)");
@@ -39,8 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $result = $stmt->get_result();
         $user = $result->fetch_assoc();
         
-        // Debug: Log what we got from the database
-        error_log("Login result: " . print_r($user, true));
+        // Debug: Log what we got from the database with column names
+        error_log("Login result columns: " . implode(", ", array_keys($user ?? [])));
+        error_log("Login result values: " . print_r($user, true));
         
         // Free the result and close the statement
         $result->free();
@@ -62,8 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             throw new Exception("Denne kontoen er ikke en student-konto.");
         }
 
+        // Debug: Log the user array before setting session
+        error_log("User data before setting session: " . print_r($user, true));
+
         // Login successful, set session variables
-        $_SESSION['student_id'] = $user['id']; // Changed from student_id to id
+        if (!isset($user['bruker_id']) || empty($user['bruker_id'])) {
+            throw new Exception("Kunne ikke hente student-ID.");
+        }
+
+        // Set session variables for successful login
+        $_SESSION['student_id'] = $user['bruker_id'];
         $_SESSION['student_fname'] = $user['fornavn'];
         $_SESSION['student_lname'] = $user['etternavn'];
         $_SESSION['student_email'] = $user['epost'];

@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Login successful, set session variables
-        $_SESSION['foreleser_id'] = $user['user_id'];
+        $_SESSION['foreleser_id'] = $user['bruker_id'];
         $_SESSION['foreleser_fname'] = $user['fornavn'];
         $_SESSION['foreleser_lname'] = $user['etternavn'];
         $_SESSION['foreleser_email'] = $user['epost'];
