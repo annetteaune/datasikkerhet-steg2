@@ -215,3 +215,11 @@ button:hover {
   border-radius: 5px;
   background-color: #f9f9f9;
 }
+
+.password-form input[type="password"] {
+  min-width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}

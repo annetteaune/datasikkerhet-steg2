@@ -135,9 +135,7 @@ try {
                                             data-full="<?php echo htmlspecialchars($row['innhold']); ?>"
                                         >
                                             <?php 
-                                            echo htmlspecialchars($row['emne_navn']) . " - " . 
-                                                 htmlspecialchars($row['student_fornavn']) . " " . 
-                                                 htmlspecialchars($row['student_etternavn']) . ": " . 
+                                            echo htmlspecialchars($row['emne_navn']) . ": " . 
                                                  htmlspecialchars(substr($row['innhold'], 0, 30)) . "..."; 
                                             ?>
                                         </option>
