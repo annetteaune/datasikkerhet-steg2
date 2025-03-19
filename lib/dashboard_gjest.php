@@ -220,7 +220,33 @@ try {
                                             throw new Exception("Feil ved henting av kommentarer");
                                         }
 
-                                        $kommentarer_result = $stmt->get_result();
+                                        // Håndter første resultset (SUCCESS/ERROR)
+                                        $result = $stmt->get_result();
+                                        $status = $result->fetch_assoc();
+                                        error_log("Comments status: " . print_r($status, true));
+                                        
+                                        if ($status['result'] === 'SUCCESS') {
+                                            // Gå til neste resultset som inneholder kommentarene
+                                            $stmt->next_result();
+                                            $kommentarer_result = $stmt->get_result();
+                                            error_log("Number of comments found: " . ($kommentarer_result ? $kommentarer_result->num_rows : 0));
+                                            
+                                            // Vis kommentarene
+                                            if ($kommentarer_result && $kommentarer_result->num_rows > 0) {
+                                                echo '<div class="comments-section">';
+                                                echo '<h4>Kommentarer:</h4>';
+                                                while ($comment = $kommentarer_result->fetch_assoc()) {
+                                                    echo '<div class="comment">';
+                                                    echo '<p>' . nl2br(htmlspecialchars($comment['innhold'])) . '</p>';
+                                                    echo '<small>Kommentert: ' . htmlspecialchars($comment['tidspunkt']) . '</small>';
+                                                    echo '</div>';
+                                                }
+                                                echo '</div>';
+                                            }
+                                        } else {
+                                            error_log("Feil ved henting av kommentarer: " . ($status['message'] ?? "Ukjent feil"));
+                                        }
+                                        
                                         $stmt->close();
 
                                         // Håndter multiple resultsets
@@ -230,24 +256,6 @@ try {
                                             }
                                         }
                                 ?>
-                                        <div class="comments">
-                                            <h4>Kommentarer:</h4>
-                                            <?php if ($kommentarer_result && $kommentarer_result->num_rows > 0): ?>
-                                                <?php while ($comment = $kommentarer_result->fetch_assoc()): ?>
-                                                    <div class="comment">
-                                                        <?php if (isset($comment['innhold'])): ?>
-                                                            <p><?php echo nl2br(htmlspecialchars($comment['innhold'])); ?></p>
-                                                        <?php endif; ?>
-                                                        <?php if (isset($comment['tidspunkt'])): ?>
-                                                            <small>Kommentert: <?php echo htmlspecialchars($comment['tidspunkt']); ?></small>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                <?php endwhile; ?>
-                                            <?php else: ?>
-                                                <p>Ingen kommentarer ennå.</p>
-                                            <?php endif; ?>
-                                        </div>
-
                                         <div class="action-buttons">
                                             <button type="button" class="comment-btn" onclick="toggleCommentForm('<?php echo $row['melding_id']; ?>')">Kommenter</button>
                                             <button type="button" class="report-btn" onclick="toggleReportForm('<?php echo $row['melding_id']; ?>')">Rapporter</button>

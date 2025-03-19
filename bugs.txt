@@ -3,9 +3,9 @@ student kan sende melding
 foreleser kan logge inn
 foreleser kan svare på melding
 gjest kan se emneside med PIN
+legge inn kommentar på melding funker
 
 ikke sjekket:
 endre passord
-legge inn kommentar på melding
 emneside (logget inn)
 rapportere melding

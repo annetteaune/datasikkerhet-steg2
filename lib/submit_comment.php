@@ -2,52 +2,54 @@
 session_start();
 require 'db.php';
 
-// Sjekk at forespørselen er POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $_SESSION['error'] = "Ugyldig forespørselsmetode";
-    header("Location: ../pages/dashboard_gjest.php");
-    exit();
-}
-
 try {
-    // Hent og valider inndata
-    $melding_id = filter_input(INPUT_POST, 'melding_id', FILTER_VALIDATE_INT);
-    $gjest_id = filter_input(INPUT_POST, 'gjest_id', FILTER_VALIDATE_INT);
-    $innhold = trim($_POST['innhold'] ?? '');
-
-    // Valider påkrevde felt
-    if (!$melding_id || !$gjest_id || empty($innhold)) {
-        throw new Exception("Alle feltene må fylles ut");
+    // Valider at nødvendige felt er fylt ut
+    if (!isset($_POST['melding_id']) || !isset($_POST['innhold']) || empty($_POST['innhold'])) {
+        throw new Exception("Alle felt må fylles ut");
     }
+
+    // Hent IP-adresse
+    $ip_adresse = $_SERVER['REMOTE_ADDR'];
+    
+    // Hent andre verdier
+    $melding_id = filter_input(INPUT_POST, 'melding_id', FILTER_VALIDATE_INT);
+    $innhold = $_POST['innhold'];
 
     // Opprett databasetilkobling med gjest-rolle
     $conn = get_db_connection('guest');
 
-    // Kall lagret prosedyre for å legge til kommentar
-    $stmt = $conn->prepare("CALL add_comment(?, ?, ?)");
+    // Kall prosedyren med IP-adresse
+    $stmt = $conn->prepare("CALL add_guest_comment(?, ?, ?)");
     if (!$stmt) {
-        throw new Exception("Feil ved forberedelse av prosedyrekall");
+        throw new Exception("Feil ved forberedelse av add_guest_comment");
     }
 
-    $stmt->bind_param("iis", $melding_id, $gjest_id, $innhold);
-    
+    $stmt->bind_param("iss", $melding_id, $innhold, $ip_adresse);
     if (!$stmt->execute()) {
-        throw new Exception("Feil ved utførelse av prosedyrekall");
+        throw new Exception("Feil ved lagring av kommentar");
     }
 
-    $_SESSION['success'] = "Kommentaren ble lagt til";
-    header("Location: ../pages/dashboard_gjest.php");
-    
+    // Håndter resultatet
+    $result = $stmt->get_result();
+    $status = $result->fetch_assoc();
+
+    if ($status['result'] === 'SUCCESS') {
+        $_SESSION['success'] = "Kommentar lagt til";
+    } else {
+        throw new Exception($status['message'] ?? "Feil ved lagring av kommentar");
+    }
+
+    $stmt->close();
+    $conn->close();
+
+    // Omdiriger tilbake til dashboard
+    header("Location: dashboard_gjest.php");
+    exit();
+
 } catch (Exception $e) {
-    $_SESSION['error'] = "Feil: " . $e->getMessage();
     error_log("Feil i submit_comment.php: " . $e->getMessage());
-    header("Location: ../pages/dashboard_gjest.php");
-} finally {
-    if (isset($stmt)) {
-        $stmt->close();
-    }
-    if (isset($conn)) {
-        $conn->close();
-    }
+    $_SESSION['error'] = $e->getMessage();
+    header("Location: dashboard_gjest.php");
+    exit();
 }
 ?>
