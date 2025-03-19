@@ -50,6 +50,7 @@ try {
     $_SESSION['emne_id'] = $data['emne_id'];
     $_SESSION['emne_navn'] = $data['emne_navn'];
     $_SESSION['emne_kode'] = $data['emne_kode'];
+    $_SESSION['pin_kode'] = $pin;
     $_SESSION['foreleser_fornavn'] = $data['foreleser_fornavn'];
     $_SESSION['foreleser_etternavn'] = $data['foreleser_etternavn'];
     $_SESSION['foreleser_bilde'] = $data['foreleser_bilde'];

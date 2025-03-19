@@ -2,9 +2,10 @@ student kan logge inn
 student kan sende melding
 foreleser kan logge inn
 foreleser kan svare på melding
+gjest kan se emneside med PIN
 
 ikke sjekket:
 endre passord
 legge inn kommentar på melding
-emneside (gjest)
 emneside (logget inn)
+rapportere melding
