@@ -42,35 +42,59 @@ try {
         throw new Exception("Passordene er ikke like.");
     }
     
-    // Opprett databasetilkobling med foreleser-rolle
+    // Get database connection with lecturer role
     $conn = get_db_connection('lecturer');
-    
-    // Kall lagret prosedyre for å bytte passord
-    $stmt = $conn->prepare("CALL change_lecturer_password(?, ?, ?)");
+    error_log("Database connection established");
+
+    // Call the change_password stored procedure
+    $stmt = $conn->prepare("CALL change_password(?, ?, ?)");
     if (!$stmt) {
-        throw new Exception("Feil ved forberedelse av spørring: " . $conn->error);
+        error_log("Failed to prepare statement: " . $conn->error);
+        throw new Exception("Feil ved forberedelse av passordbytte");
     }
-    
+
     $stmt->bind_param("iss", $foreleser_id, $current_pw, $new_pw);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result === false) {
-        throw new Exception("Feil ved bytte av passord.");
+    if (!$stmt->execute()) {
+        error_log("Failed to execute statement: " . $stmt->error);
+        throw new Exception("Feil ved utførelse av passordbytte");
     }
-    
+
+    $result = $stmt->get_result();
     $response = $result->fetch_assoc();
     
-    if (!$response || $response['success'] != 1) {
-        throw new Exception($response['message'] ?? "Feil ved bytte av passord.");
-    }
-    
-    // Lukk databasetilkoblingen
+    // Free the result and close the statement
+    $result->free();
     $stmt->close();
-    $conn->close();
-    
-    // Sett suksessmelding og omdiriger
-    $_SESSION['success'] = "Passordet ditt er endret.";
+
+    if (!$response['success']) {
+        error_log("Password change failed: " . $response['message']);
+        throw new Exception($response['message']);
+    }
+
+    // Verifiser nåværende passord
+    if (!password_verify($current_pw, $response['stored_hash'])) {
+        error_log("Current password verification failed");
+        throw new Exception("Nåværende passord er feil.");
+    }
+
+    // Oppdater passordet med ny hash
+    $new_hash = password_hash($new_pw, PASSWORD_DEFAULT);
+    $update_stmt = $conn->prepare("UPDATE foreleser SET passord = ? WHERE foreleser_id = ?");
+    if (!$update_stmt) {
+        error_log("Failed to prepare update statement: " . $conn->error);
+        throw new Exception("Feil ved forberedelse av passordoppdatering");
+    }
+
+    $update_stmt->bind_param("si", $new_hash, $foreleser_id);
+    if (!$update_stmt->execute()) {
+        error_log("Failed to execute update statement: " . $update_stmt->error);
+        throw new Exception("Feil ved oppdatering av passord");
+    }
+
+    $update_stmt->close();
+
+    // Password change successful
+    $_SESSION['success_message'] = "Passordet ble oppdatert.";
     header("Location: dashboard_foreleser.php");
     exit();
     

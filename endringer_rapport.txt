@@ -561,3 +561,119 @@ SIKKERHETSVURDERING:
 - Verifisert at passordhashing fungerer riktig ved registrering av både studenter og forelesere
 - Implementert sikker passordverifisering med password_verify() for alle brukertyper
 - Lagt til bedre feilhåndtering og logging for innloggingsprosesser 
+
+=== 2024-03-21 - Styling og feilmeldinger ===
+1. Lagt til CSS-stiler for feilmeldinger og suksessmeldinger i styling.css:
+   - Feilmeldinger vises med rød bakgrunn og tekst
+   - Suksessmeldinger vises med grønn bakgrunn og tekst
+   - Begge har avrundede hjørner og sentrert tekst
+   - Maksimal bredde på 400px for bedre lesbarhet
+
+2. Oppdatert login-sidene for å vise feilmeldinger:
+   - Lagt til session_start() i både foreleser_login.php og student_login.php
+   - Implementert visning av feilmeldinger fra $_SESSION['error_message']
+   - Fjerner feilmeldinger etter visning for å unngå at de vises igjen ved neste sideinnlasting
+
+3. Forbedret feilmeldinger i login-prosessen:
+   - Endret fra spesifikke feilmeldinger til generisk "Brukernavn eller passord er feil"
+   - Lagt til bedre logging av feil i login_action_foreleser.php og login_action_student.php
+   - Forbedret håndtering av feilmeldinger i session
+
+Neste steg:
+1. Teste alle endrede filer
+2. Oppdatere dokumentasjon og brukergrensesnitt
+
+Detaljerte endringer vil bli lagt til etter hvert som de implementeres.
+
+22. Feilretting i innloggingshåndtering:
+- Endret passordhåndtering i login_action_foreleser.php og login_action_student.php:
+  * Fjernet feilaktig hashing av passord før sending til stored procedure
+  * Endret til å sende rått passord til stored procedure for sammenligning med lagret hash
+  * La stored procedure håndtere passordhashing og validering
+- Forbedret feilmeldinger:
+  * Mer presise feilmeldinger ved innloggingsfeil
+  * Bedre logging av innloggingsforsøk
+- Oppdatert kommentarer og dokumentasjon for klarere forståelse av passordhåndtering
+
+Disse endringene løser problemer med:
+1. Feilaktig dobbel hashing av passord som førte til "Invalid credentials" feil
+2. Inkonsistent passordhåndtering mellom registrering og innlogging
+3. Uklar feilhåndtering ved innloggingsforsøk
+
+Detaljerte endringer vil bli lagt til etter hvert som de implementeres.
+
+Endringer i gjestedashbord (19. mars 2025):
+
+1. Anonymisering av meldinger
+- Fjernet visning av studentens navn fra meldinger for å gjøre dem anonyme
+- Beholdt visning av foreleserens navn på svar for å bevare autoritet
+
+2. Forbedret kommentar- og rapporteringsfunksjonalitet
+- Lagt til "Kommenter" og "Rapporter" knapper under hver melding
+- Implementert dynamisk visning/skjuling av skjemaer ved knappetrykk
+- Lagt til "Avbryt" knapper i begge skjemaer
+- Forbedret styling med bakgrunnsfarge og rammer for bedre brukervennlighet
+
+3. Oppdatert kommentarsystem
+- Endret fra å bruke gjest_id til å bruke IP-adresse for identifisering
+- Implementert ny prosedyre add_guest_comment for håndtering av gjestekommentarer
+- Forbedret feilhåndtering og tilbakemeldinger til brukeren
+
+4. Styling og UX forbedringer
+- Lagt til CSS for action-buttons med flexbox og spacing
+- Implementert konsistent styling for skjemaer og knapper
+- Forbedret visuell tilbakemelding ved interaksjon
+
+5. Sikkerhet og validering
+- Implementert validering av alle felt før visning
+- Lagt til htmlspecialchars for alle output-verdier
+- Forbedret håndtering av databasetilkoblinger og feilsituasjoner
+
+Kjente problemer som må fikses:
+- Kommentarer vises ikke umiddelbart etter lagring (trenger oppdatering av visningslogikk)
+- Må håndtere multiple resultsets bedre i get_message_comments prosedyren 
+ENDRING: Fjernet gjest_id og erstattet med IP-adresse for gjestekommentarer
+
+BEGRUNNELSE:
+- Systemet brukte tidligere en gjest_id som fremmednøkkel i kommentartabellen
+- Dette skapte unødvendig kompleksitet siden gjester er midlertidige brukere
+- Det oppstod problemer med referanseintegritet når gjester ikke ble riktig registrert i gjest-tabellen
+- Ved å bruke IP-adresse i stedet:
+  * Forenkler vi systemet ved å fjerne avhengigheten til gjest-tabellen
+  * Unngår vi problemer med foreign key constraints
+  * Kan vi fortsatt spore hvem som la inn kommentaren
+  * Reduserer vi databasestørrelsen ved å ikke lagre unødvendige gjesteposter
+  * Gjør vi det enklere å håndtere midlertidige gjestebrukere
+
+TEKNISKE ENDRINGER:
+1. Endret kommentartabellen:
+   - Fjernet gjest_id kolonne og foreign key constraint
+   - La til ip_adresse VARCHAR(45) kolonne
+
+2. Oppdatert stored procedures:
+   - add_guest_comment: Bruker nå IP-adresse i stedet for gjest_id
+   - get_message_comments: Returnerer IP-adresse i stedet for gjest_id
+
+3. Oppdatert PHP-filer:
+   - submit_comment.php: Henter og lagrer IP-adresse
+   - dashboard_gjest.php: Fjernet referanser til gjest_id i kommentarvisning
+
+SIKKERHETSVURDERING:
+- IP-adresse er ikke en perfekt identifikator, men tilstrekkelig for gjestekommentarer
+- IP-adressen lagres for å kunne spore misbruk om nødvendig
+- Systemet er fortsatt beskyttet av pinkode for tilgang til emnet 
+
+[20.03.2024] - Passordhåndtering og innlogging
+- Oppdatert login_action_foreleser.php for å bruke password_verify() i stedet for SHA2-hashing
+- Endret databasetilkoblingen fra 'guest' til 'lecturer' for å få tilgang til foreleser-tabellen
+- Fjernet bruk av login_user prosedyren og erstattet med direkte SQL-spørring
+- Lagt til mer detaljert logging for feilsøking
+
+- Oppdatert login_action_student.php for å bruke password_verify() i stedet for SHA2-hashing
+- Endret databasetilkoblingen fra 'guest' til 'student' for å få tilgang til studenter-tabellen
+- Korrigert tabellnavn fra 'student' til 'studenter'
+- Lagt til mer detaljert logging for feilsøking
+
+- Verifisert at passordhashing fungerer riktig ved registrering av både studenter og forelesere
+- Implementert sikker passordverifisering med password_verify() for alle brukertyper
+- Lagt til bedre feilhåndtering og logging for innloggingsprosesser 

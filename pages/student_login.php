@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +30,15 @@
         </div>
 
         <div class="form-container">
+            <?php if (isset($_SESSION['error_message'])): ?>
+                <div class="error-message">
+                    <?php 
+                    echo htmlspecialchars($_SESSION['error_message']);
+                    unset($_SESSION['error_message']); // Fjern feilmeldingen etter visning
+                    ?>
+                </div>
+            <?php endif; ?>
+
             <form action="../lib/login_action_student.php" method="post">
                 <div class="form-group">
                     <label class="form-label" for="email">E-post</label>

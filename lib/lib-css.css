@@ -115,6 +115,22 @@ label {
   padding: 20px;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2rem 0;
+}
+
+.logout-btn {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  padding: 5px 10px;
+}
+
 .logo-link {
   text-decoration: none;
   color: inherit;
@@ -222,4 +238,27 @@ button:hover {
   border: 1px solid #ccc;
   border-radius: 4px;
   margin-bottom: 10px;
+}
+
+/* Meldinger */
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 15px;
+  margin: 20px 0;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 15px;
+  margin: 20px 0;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
 }

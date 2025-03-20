@@ -57,11 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         error_log("Stored hash: " . $user['passord']);
         error_log("Input password: " . $password);
 
-        // Verifiser passordet
+        // Verifiser nåværende passord
         if (!password_verify($password, $user['passord'])) {
-            error_log("Password verification failed for email: " . $email);
-            error_log("Hash verification failed - stored hash: " . $user['passord']);
-            throw new Exception("Ugyldig e-post eller passord.");
+            error_log("Current password verification failed");
+            $_SESSION['error_message'] = "Brukernavn eller passord er feil.";
+            header("Location: ../pages/student_login.php?error=1");
+            exit();
         }
 
         error_log("Password verification successful");
@@ -82,7 +83,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } catch (Exception $e) {
         // Log error and show user-friendly message
         error_log("Login error: " . $e->getMessage());
-        $_SESSION['error'] = $e->getMessage();
+        $_SESSION['error_message'] = $e->getMessage();
+        
+        // Close database connection if it exists
+        if (isset($conn)) {
+            close_db_connection($conn);
+        }
+        
         header("Location: ../pages/student_login.php?error=1");
         exit();
     }

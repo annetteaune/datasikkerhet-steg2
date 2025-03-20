@@ -105,15 +105,30 @@ try {
     <main>
         <section class="intro">
             <div class="container">
-                <h2>Velkommen til HearMeOut!</h2>
-                
-                <?php if (isset($_SESSION['success'])): ?>
-                    <div class="success"><?php echo htmlspecialchars($_SESSION['success']); ?></div>
-                    <?php unset($_SESSION['success']); ?>
+                <div class="header">
+                    <h1>Foreleser Dashboard</h1>
+                    <div class="user-info">
+                        <span>Velkommen, <?php echo htmlspecialchars($_SESSION['foreleser_fname'] . ' ' . $_SESSION['foreleser_lname']); ?></span>
+                        <a href="logout.php" class="logout-btn">Logg ut</a>
+                    </div>
+                </div>
+
+                <?php if (isset($_SESSION['success_message'])): ?>
+                    <div class="success-message">
+                        <?php 
+                        echo htmlspecialchars($_SESSION['success_message']);
+                        unset($_SESSION['success_message']); // Fjern meldingen etter visning
+                        ?>
+                    </div>
                 <?php endif; ?>
+
                 <?php if (isset($_SESSION['error'])): ?>
-                    <div class="error"><?php echo htmlspecialchars($_SESSION['error']); ?></div>
-                    <?php unset($_SESSION['error']); ?>
+                    <div class="error-message">
+                        <?php 
+                        echo htmlspecialchars($_SESSION['error']);
+                        unset($_SESSION['error']); // Fjern feilmeldingen etter visning
+                        ?>
+                    </div>
                 <?php endif; ?>
 
                 <div class="messages-section">

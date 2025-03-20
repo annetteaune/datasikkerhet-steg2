@@ -50,10 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             throw new Exception("Ugyldig e-post eller passord.");
         }
 
-        // Verifiser passordet
+        // Verifiser nåværende passord
         if (!password_verify($password, $user['passord'])) {
-            error_log("Password verification failed for email: " . $email);
-            throw new Exception("Ugyldig e-post eller passord.");
+            error_log("Current password verification failed");
+            $_SESSION['error_message'] = "Brukernavn eller passord er feil.";
+            header("Location: ../pages/foreleser_login.php?error=1");
+            exit();
         }
 
         // Login successful, set session variables
