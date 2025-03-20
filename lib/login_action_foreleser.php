@@ -23,44 +23,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Get database connection with lecturer role
         $conn = get_db_connection('lecturer');
+        error_log("Database connection established");
 
-        // Call the user_login stored procedure
-        $stmt = $conn->prepare("CALL user_login(?, ?)");
+        // Hent brukerinformasjon og passord
+        $stmt = $conn->prepare("SELECT foreleser_id, fornavn, etternavn, epost, passord FROM foreleser WHERE epost = ?");
         if (!$stmt) {
-            throw new Exception("Database query failed: " . $conn->error);
+            error_log("Failed to prepare statement: " . $conn->error);
+            throw new Exception("Feil ved forberedelse av login");
         }
 
-        $stmt->bind_param("ss", $email, $password);
-        
+        $stmt->bind_param("s", $email);
         if (!$stmt->execute()) {
-            throw new Exception("Feil ved innlogging: " . $stmt->error);
+            error_log("Failed to execute statement: " . $stmt->error);
+            throw new Exception("Feil ved utførelse av login");
         }
-        
+
         $result = $stmt->get_result();
         $user = $result->fetch_assoc();
         
         // Free the result and close the statement
         $result->free();
         $stmt->close();
-        
-        // Handle multiple result sets
-        while ($conn->more_results() && $conn->next_result()) {
-            if ($res = $conn->store_result()) {
-                $res->free();
-            }
-        }
 
         if (!$user) {
+            error_log("No user found for email: " . $email);
             throw new Exception("Ugyldig e-post eller passord.");
         }
 
-        // Verify that this is a lecturer account
-        if ($user['user_type'] !== 'lecturer') {
-            throw new Exception("Denne kontoen er ikke en foreleser-konto.");
+        // Verifiser passordet
+        if (!password_verify($password, $user['passord'])) {
+            error_log("Password verification failed for email: " . $email);
+            throw new Exception("Ugyldig e-post eller passord.");
         }
 
         // Login successful, set session variables
-        $_SESSION['foreleser_id'] = $user['bruker_id'];
+        $_SESSION['foreleser_id'] = $user['foreleser_id'];
         $_SESSION['foreleser_fname'] = $user['fornavn'];
         $_SESSION['foreleser_lname'] = $user['etternavn'];
         $_SESSION['foreleser_email'] = $user['epost'];

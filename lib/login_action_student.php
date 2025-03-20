@@ -24,65 +24,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             throw new Exception("Vennligst fyll ut både e-post og passord.");
         }
 
-        // Get database connection with guest role for login
-        $conn = get_db_connection('guest');
+        // Get database connection with student role
+        $conn = get_db_connection('student');
+        error_log("Database connection established");
 
-        // Call the user_login stored procedure with raw password
-        $stmt = $conn->prepare("CALL user_login(?, ?)");
+        // Hent brukerinformasjon og passord
+        $stmt = $conn->prepare("SELECT student_id, fornavn, etternavn, epost, passord FROM studenter WHERE epost = ?");
         if (!$stmt) {
-            throw new Exception("Database query failed: " . $conn->error);
+            error_log("Failed to prepare statement: " . $conn->error);
+            throw new Exception("Feil ved forberedelse av login");
         }
 
-        $stmt->bind_param("ss", $email, $password);
-        
+        $stmt->bind_param("s", $email);
         if (!$stmt->execute()) {
-            throw new Exception("Feil ved innlogging: " . $stmt->error);
+            error_log("Failed to execute statement: " . $stmt->error);
+            throw new Exception("Feil ved utførelse av login");
         }
-        
+
         $result = $stmt->get_result();
         $user = $result->fetch_assoc();
-        
-        // Debug: Log what we got from the database with column names
-        error_log("Login result columns: " . implode(", ", array_keys($user ?? [])));
-        error_log("Login result values: " . print_r($user, true));
         
         // Free the result and close the statement
         $result->free();
         $stmt->close();
-        
-        // Handle multiple result sets
-        while ($conn->more_results() && $conn->next_result()) {
-            if ($res = $conn->store_result()) {
-                $res->free();
-            }
-        }
 
         if (!$user) {
+            error_log("No user found for email: " . $email);
             throw new Exception("Ugyldig e-post eller passord.");
         }
 
-        // Verify that this is a student account
-        if ($user['user_type'] !== 'student') {
-            throw new Exception("Denne kontoen er ikke en student-konto.");
+        // Debug: Log the stored hash and input password
+        error_log("Stored hash: " . $user['passord']);
+        error_log("Input password: " . $password);
+
+        // Verifiser passordet
+        if (!password_verify($password, $user['passord'])) {
+            error_log("Password verification failed for email: " . $email);
+            error_log("Hash verification failed - stored hash: " . $user['passord']);
+            throw new Exception("Ugyldig e-post eller passord.");
         }
 
-        // Debug: Log the user array before setting session
-        error_log("User data before setting session: " . print_r($user, true));
+        error_log("Password verification successful");
 
         // Login successful, set session variables
-        if (!isset($user['bruker_id']) || empty($user['bruker_id'])) {
-            throw new Exception("Kunne ikke hente student-ID.");
-        }
-
-        // Set session variables for successful login
-        $_SESSION['student_id'] = $user['bruker_id'];
+        $_SESSION['student_id'] = $user['student_id'];
         $_SESSION['student_fname'] = $user['fornavn'];
         $_SESSION['student_lname'] = $user['etternavn'];
         $_SESSION['student_email'] = $user['epost'];
         $_SESSION['user_type'] = 'student';
-
-        // Debug: Log what we set in the session
-        error_log("Session variables set: " . print_r($_SESSION, true));
 
         // Close database connection
         close_db_connection($conn);

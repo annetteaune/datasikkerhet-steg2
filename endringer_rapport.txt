@@ -546,3 +546,18 @@ SIKKERHETSVURDERING:
 - IP-adresse er ikke en perfekt identifikator, men tilstrekkelig for gjestekommentarer
 - IP-adressen lagres for å kunne spore misbruk om nødvendig
 - Systemet er fortsatt beskyttet av pinkode for tilgang til emnet 
+
+[20.03.2024] - Passordhåndtering og innlogging
+- Oppdatert login_action_foreleser.php for å bruke password_verify() i stedet for SHA2-hashing
+- Endret databasetilkoblingen fra 'guest' til 'lecturer' for å få tilgang til foreleser-tabellen
+- Fjernet bruk av login_user prosedyren og erstattet med direkte SQL-spørring
+- Lagt til mer detaljert logging for feilsøking
+
+- Oppdatert login_action_student.php for å bruke password_verify() i stedet for SHA2-hashing
+- Endret databasetilkoblingen fra 'guest' til 'student' for å få tilgang til studenter-tabellen
+- Korrigert tabellnavn fra 'student' til 'studenter'
+- Lagt til mer detaljert logging for feilsøking
+
+- Verifisert at passordhashing fungerer riktig ved registrering av både studenter og forelesere
+- Implementert sikker passordverifisering med password_verify() for alle brukertyper
+- Lagt til bedre feilhåndtering og logging for innloggingsprosesser 

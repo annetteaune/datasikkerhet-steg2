@@ -1,3 +1,4 @@
+funker:
 student kan logge inn
 student kan sende melding
 foreleser kan logge inn
@@ -6,6 +7,6 @@ gjest kan se emneside med PIN
 kan kommentere på melding 
 kan rapportere melding
 
-ikke sjekket:
+funker ikke:
 endre passord
 

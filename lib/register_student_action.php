@@ -46,6 +46,7 @@ try {
 	try {
 		// Hash the password
 		$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+		error_log("Generated password hash: " . $hashed_password);
 
 		// Call the register_student stored procedure
 		$stmt = $conn->prepare("CALL register_student(?, ?, ?, ?)");
@@ -54,6 +55,7 @@ try {
 		}
 
 		$stmt->bind_param("ssss", $fname, $lname, $email, $hashed_password);
+		error_log("Attempting to register student with email: " . $email);
 		$stmt->execute();
 		
 		// Store all results to prevent "Commands out of sync" error
