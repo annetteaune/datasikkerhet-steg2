@@ -9,10 +9,10 @@ gjest kan se emneside med PIN
 kan kommentere på melding
 kan rapportere melding
 endre passord
+glemt passord
 
 ikke sjekket:
 api-funksjonalitet
-glemt passord
 
 funker ikke:
 

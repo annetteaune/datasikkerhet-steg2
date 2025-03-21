@@ -33,7 +33,7 @@
                 <div class="form-error"><?php echo htmlspecialchars($_GET['tomme_felt']); ?></div>
             <?php endif; ?>
 
-            <form action="bytt_foreleser_pw.php" method="post">
+            <form action="tilbakestill_passord.php" method="post">
                 <div class="form-group">
                     <label class="form-label" for="email">E-post</label>
                     <input class="form-input" type="email" id="email" name="email" required placeholder="din@epost.no">
