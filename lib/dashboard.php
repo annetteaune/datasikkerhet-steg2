@@ -128,13 +128,13 @@ try {
                     $messages_shown = false;
                     if ($meldinger_result): 
                         while ($row = $meldinger_result->fetch_assoc()):
-                            if (isset($row['emne_navn']) && isset($row['innhold']) && isset($row['dato'])):
+                            if (isset($row['emne_navn']) && isset($row['innhold']) && isset($row['tidspunkt'])):
                                 $messages_shown = true;
                     ?>
                             <div class="message-container">
                                 <h3><?php echo htmlspecialchars($row['emne_navn']); ?></h3>
                                 <p><?php echo nl2br(htmlspecialchars($row['innhold'])); ?></p>
-                                <small>Sendt: <?php echo htmlspecialchars($row['dato']); ?></small>
+                                <small>Sendt: <?php echo htmlspecialchars($row['tidspunkt']); ?></small>
 
                                 <?php if (isset($row['svar']) && !empty($row['svar'])): ?>
                                     <div class="reply">

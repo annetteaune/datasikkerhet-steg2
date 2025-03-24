@@ -19,12 +19,12 @@ try {
     $conn = get_db_connection('guest');
 
     // Kall prosedyren med IP-adresse
-    $stmt = $conn->prepare("CALL add_guest_comment(?, ?, ?)");
+    $stmt = $conn->prepare("CALL add_comment(?, ?, ?)");
     if (!$stmt) {
-        throw new Exception("Feil ved forberedelse av add_guest_comment");
+        throw new Exception("Feil ved forberedelse av add_comment");
     }
 
-    $stmt->bind_param("iss", $melding_id, $innhold, $ip_adresse);
+    $stmt->bind_param("iss", $melding_id, $ip_adresse, $innhold);
     if (!$stmt->execute()) {
         throw new Exception("Feil ved lagring av kommentar");
     }

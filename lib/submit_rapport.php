@@ -26,12 +26,14 @@ try {
     $conn = get_db_connection('guest');
 
     // Kall lagret prosedyre for å rapportere melding
-    $stmt = $conn->prepare("CALL report_message(?, ?, ?)");
+    $stmt = $conn->prepare("CALL report_message(?, ?, ?, ?)");
     if (!$stmt) {
         throw new Exception("Feil ved forberedelse av prosedyrekall");
     }
 
-    $stmt->bind_param("iss", $melding_id, $grunn, $ip_adresse);
+    // For gjester sender vi NULL som student_id
+    $student_id = null;
+    $stmt->bind_param("isis", $melding_id, $ip_adresse, $student_id, $grunn);
     
     if (!$stmt->execute()) {
         throw new Exception("Feil ved utførelse av prosedyrekall");

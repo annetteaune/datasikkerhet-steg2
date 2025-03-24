@@ -1,13 +1,21 @@
 RewriteEngine On
-RewriteBase /feedback-api/
+RewriteBase /cleanSteg1/api/
+
+# Redirect /api til api.html
+RewriteRule ^$ api.html [L]
 
 # Ensure the request isn't for a real file or directory
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
 # Handle API requests
-RewriteRule ^api(/.*)?$ api/index.php [L,QSA]
+RewriteRule ^(.*)$ index.php [L,QSA]
 
-# For debugging - log rewrite attempts
-RewriteLog "/var/log/apache2/rewrite.log"
-RewriteLogLevel 3
+# Enable CORS
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+# Enable error logging
+php_flag log_errors on
+php_value error_log "C:/xampp/php/logs/php_error.log"

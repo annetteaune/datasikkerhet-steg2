@@ -12,7 +12,8 @@ class API {
 
     public function getStudent($studentId) {
         try {
-            $stmt = $this->conn->prepare("CALL get_student_profile(?)");
+            // Bruker student_profile_view
+            $stmt = $this->conn->prepare("SELECT * FROM student_profile_view WHERE student_id = ?");
             $stmt->bind_param('i', $studentId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -30,7 +31,8 @@ class API {
     
     public function getLecturer($lecturerId) {
         try {
-            $stmt = $this->conn->prepare("CALL get_lecturer_profile(?)");
+            // Bruker lecturer_profile_view
+            $stmt = $this->conn->prepare("SELECT * FROM lecturer_profile_view WHERE foreleser_id = ?");
             $stmt->bind_param('i', $lecturerId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -40,10 +42,16 @@ class API {
             }
             
             $data = $result->fetch_assoc();
-            if ($data['emner']) {
-                $data['emner'] = explode(',', $data['emner']);
-            } else {
-                $data['emner'] = [];
+            
+            // Hent emner for foreleseren
+            $stmt = $this->conn->prepare("SELECT * FROM lecturer_courses_view WHERE foreleser_id = ?");
+            $stmt->bind_param('i', $lecturerId);
+            $stmt->execute();
+            $courses = $stmt->get_result();
+            
+            $data['emner'] = [];
+            while ($course = $courses->fetch_assoc()) {
+                $data['emner'][] = $course;
             }
             
             return ['status' => 'success', 'data' => $data];
@@ -55,6 +63,7 @@ class API {
 
     public function registerStudent($fornavn, $etternavn, $epost, $passord) {
         try {
+            // Bruker lagret prosedyre register_student
             $stmt = $this->conn->prepare("CALL register_student(?, ?, ?, ?)");
             $stmt->bind_param('ssss', $fornavn, $etternavn, $epost, $passord);
             $stmt->execute();
@@ -78,8 +87,8 @@ class API {
             // Håndter bildeopplasting
             $bilde_path = $this->handleImageUpload($bilde);
             
-            // Registrer foreleser og emne
-            $stmt = $this->conn->prepare("CALL register_lecturer(?, ?, ?, ?, ?, ?, ?, ?)");
+            // Bruker lagret prosedyre register_lecturer_with_course
+            $stmt = $this->conn->prepare("CALL register_lecturer_with_course(?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->bind_param('ssssssss', $fornavn, $etternavn, $epost, $passord, $bilde_path, $emne_navn, $emne_kode, $pin_kode);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -138,7 +147,8 @@ class API {
 
     public function getCourseInfo($emne_id, $pin_kode) {
         try {
-            $stmt = $this->conn->prepare("CALL get_course_info(?, ?)");
+            // Bruker public_courses_view
+            $stmt = $this->conn->prepare("SELECT * FROM public_courses_view WHERE emne_id = ? AND pin_kode = ?");
             $stmt->bind_param('is', $emne_id, $pin_kode);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -155,7 +165,8 @@ class API {
 
     public function getAvailableCourses() {
         try {
-            $stmt = $this->conn->prepare("CALL get_available_courses()");
+            // Bruker public_courses_view
+            $stmt = $this->conn->prepare("SELECT * FROM public_courses_view");
             $stmt->execute();
             $result = $stmt->get_result();
             
@@ -219,6 +230,7 @@ class API {
 
     public function sendMessage($studentId, $emneId, $innhold) {
         try {
+            // Bruker lagret prosedyre send_message
             $stmt = $this->conn->prepare("CALL send_message(?, ?, ?)");
             $stmt->bind_param('iis', $studentId, $emneId, $innhold);
             $stmt->execute();
@@ -237,13 +249,25 @@ class API {
 
     public function getMessages($emneId, $pinKode) {
         try {
-            $stmt = $this->conn->prepare("CALL get_course_messages_with_responses(?, ?)");
+            // Bruker course_messages_view
+            $stmt = $this->conn->prepare("SELECT * FROM course_messages_view WHERE emne_id = ? AND pin_kode = ?");
             $stmt->bind_param('is', $emneId, $pinKode);
             $stmt->execute();
             $result = $stmt->get_result();
             
             $messages = [];
             while ($row = $result->fetch_assoc()) {
+                // Hent kommentarer for hver melding
+                $stmt2 = $this->conn->prepare("SELECT * FROM kommentarer WHERE melding_id = ?");
+                $stmt2->bind_param('i', $row['melding_id']);
+                $stmt2->execute();
+                $comments = $stmt2->get_result();
+                
+                $row['kommentarer'] = [];
+                while ($comment = $comments->fetch_assoc()) {
+                    $row['kommentarer'][] = $comment;
+                }
+                
                 $messages[] = $row;
             }
             return ['status' => 'success', 'data' => $messages];
@@ -255,6 +279,7 @@ class API {
 
     public function addResponse($meldingId, $foreleserId, $innhold) {
         try {
+            // Bruker lagret prosedyre add_response
             $stmt = $this->conn->prepare("CALL add_response(?, ?, ?)");
             $stmt->bind_param('iis', $meldingId, $foreleserId, $innhold);
             $stmt->execute();
@@ -273,7 +298,8 @@ class API {
 
     public function addComment($meldingId, $innhold, $ipAddress) {
         try {
-            $stmt = $this->conn->prepare("CALL add_comment(?, ?, ?)");
+            // Bruker lagret prosedyre add_guest_comment
+            $stmt = $this->conn->prepare("CALL add_guest_comment(?, ?, ?)");
             $stmt->bind_param('iss', $meldingId, $innhold, $ipAddress);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -291,6 +317,7 @@ class API {
 
     public function reportMessage($meldingId, $grunn, $ipAddress) {
         try {
+            // Bruker lagret prosedyre report_message
             $stmt = $this->conn->prepare("CALL report_message(?, ?, ?)");
             $stmt->bind_param('iss', $meldingId, $grunn, $ipAddress);
             $stmt->execute();

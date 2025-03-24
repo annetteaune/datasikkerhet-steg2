@@ -659,3 +659,65 @@ NESTE STEG:
 4. Logging av passordtilbakestillinger for sikkerhetsrevisjon
 
 [Implementert av: Claude, Dato: 2024-03-21]
+
+
+# API:
+I API.php:
+Oppdatert getStudent() til å bruke student_profile_view
+Oppdatert getLecturer() til å bruke lecturer_profile_view og lecturer_courses_view
+Oppdatert getCourseInfo() til å bruke public_courses_view
+Oppdatert getAvailableCourses() til å bruke public_courses_view
+Oppdatert getMessages() til å bruke course_messages_view
+Endret addComment() til å bruke add_guest_comment prosedyren
+Beholdt bruk av lagrede prosedyrer for operasjoner som krever transaksjoner eller kompleks logikk
+I index.php:
+Forbedret feilhåndtering og validering
+Lagt til CORS-støtte
+Standardisert responsformat
+Forbedret validering av input
+Lagt til bedre feilmeldinger på norsk
+Hovedendringene inkluderer:
+Bruk av views for leseoperasjoner:
+student_profile_view
+lecturer_profile_view
+lecturer_courses_view
+public_courses_view
+course_messages_view
+Bruk av lagrede prosedyrer for skriveoperasjoner:
+register_student
+register_lecturer_with_course
+send_message
+add_response
+add_guest_comment
+report_message
+Forbedret sikkerhet:
+Validering av input
+Rollebasert tilgang
+Sikker håndtering av databasetilkoblinger
+Bedre feilhåndtering
+Forbedret ytelse:
+Redusert antall databasekall ved bruk av views
+Optimalisert datastruktur
+Bedre caching av tilkoblinger
+
+Database.php:
+Forbedret tilkoblingshåndtering:
+Bedre validering av eksisterende tilkoblinger
+Automatisk lukking av ugyldige tilkoblinger
+Lagt til MYSQLI_OPT_INT_AND_FLOAT_NATIVE for bedre håndtering av numeriske typer
+Lagt til nye hjelpemetoder:
+executeQuery(): For å utføre vanlige SQL-spørringer
+executeStoredProcedure(): For å utføre lagrede prosedyrer
+Forbedret feilhåndtering:
+Mer detaljerte feilmeldinger
+Bedre logging av feil
+Mer spesifikk feilhåndtering for ulike operasjoner
+Forbedret sikkerhet:
+Bedre håndtering av prepared statements
+Automatisk lukking av statements
+Validering av input
+Disse endringene vil gjøre det enklere å:
+Bruke views og lagrede prosedyrer
+Håndtere feil på en bedre måte
+Holde koden mer konsistent
+Forbedre ytelsen ved å gjenbruke tilkoblinger på en bedre måte
