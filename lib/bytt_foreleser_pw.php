@@ -46,55 +46,54 @@ try {
     $conn = get_db_connection('lecturer');
     error_log("Database connection established");
 
-    // Call the change_password stored procedure
-    $stmt = $conn->prepare("CALL change_password(?, ?, ?)");
-    if (!$stmt) {
-        error_log("Failed to prepare statement: " . $conn->error);
+    // Hent foreleserens lagrede passord for verifisering
+    $verify_stmt = $conn->prepare("SELECT passord FROM foreleser WHERE foreleser_id = ?");
+    if (!$verify_stmt) {
+        throw new Exception("Feil ved forberedelse av passordsjekk");
+    }
+
+    $verify_stmt->bind_param("i", $foreleser_id);
+    if (!$verify_stmt->execute()) {
+        throw new Exception("Feil ved utførelse av passordsjekk");
+    }
+
+    $result = $verify_stmt->get_result();
+    $user = $result->fetch_assoc();
+    $verify_stmt->close();
+
+    if (!$user || !password_verify($current_pw, $user['passord'])) {
+        throw new Exception("Nåværende passord er feil");
+    }
+
+    // Hash det nye passordet
+    $hashed_new_pw = password_hash($new_pw, PASSWORD_DEFAULT);
+
+    // Kall prosedyren for å oppdatere passordet
+    $update_stmt = $conn->prepare("CALL change_lecturer_password(?, ?)");
+    if (!$update_stmt) {
         throw new Exception("Feil ved forberedelse av passordbytte");
     }
 
-    $stmt->bind_param("iss", $foreleser_id, $current_pw, $new_pw);
-    if (!$stmt->execute()) {
-        error_log("Failed to execute statement: " . $stmt->error);
+    $update_stmt->bind_param("is", $foreleser_id, $hashed_new_pw);
+    if (!$update_stmt->execute()) {
         throw new Exception("Feil ved utførelse av passordbytte");
     }
 
-    $result = $stmt->get_result();
-    $response = $result->fetch_assoc();
+    $result = $update_stmt->get_result();
+    if (!$result) {
+        throw new Exception("Ingen respons fra databasen");
+    }
     
-    // Free the result and close the statement
-    $result->free();
-    $stmt->close();
-
-    if (!$response['success']) {
-        error_log("Password change failed: " . $response['message']);
+    $response = $result->fetch_assoc();
+    if ($response['result'] === 'ERROR') {
         throw new Exception($response['message']);
     }
-
-    // Verifiser nåværende passord
-    if (!password_verify($current_pw, $response['stored_hash'])) {
-        error_log("Current password verification failed");
-        throw new Exception("Nåværende passord er feil.");
-    }
-
-    // Oppdater passordet med ny hash
-    $new_hash = password_hash($new_pw, PASSWORD_DEFAULT);
-    $update_stmt = $conn->prepare("UPDATE foreleser SET passord = ? WHERE foreleser_id = ?");
-    if (!$update_stmt) {
-        error_log("Failed to prepare update statement: " . $conn->error);
-        throw new Exception("Feil ved forberedelse av passordoppdatering");
-    }
-
-    $update_stmt->bind_param("si", $new_hash, $foreleser_id);
-    if (!$update_stmt->execute()) {
-        error_log("Failed to execute update statement: " . $update_stmt->error);
-        throw new Exception("Feil ved oppdatering av passord");
-    }
-
+    
     $update_stmt->close();
-
+    $conn->close();
+    
     // Password change successful
-    $_SESSION['success_message'] = "Passordet ble oppdatert.";
+    $_SESSION['pw_message'] = "Passordet ble oppdatert.";
     header("Location: dashboard_foreleser.php");
     exit();
     
@@ -103,15 +102,18 @@ try {
     error_log("Feil i bytt_foreleser_pw.php: " . $e->getMessage());
     
     // Lukk databasetilkoblingen hvis den eksisterer
-    if (isset($stmt)) {
-        $stmt->close();
+    if (isset($verify_stmt) && $verify_stmt instanceof mysqli_stmt) {
+        $verify_stmt->close();
+    }
+    if (isset($update_stmt) && $update_stmt instanceof mysqli_stmt) {
+        $update_stmt->close();
     }
     if (isset($conn)) {
-        $conn->close();
+        close_db_connection($conn);
     }
     
     // Sett feilmelding og omdiriger
-    $_SESSION['error'] = $e->getMessage();
+    $_SESSION['pw_message'] = $e->getMessage();
     header("Location: dashboard_foreleser.php");
     exit();
 }

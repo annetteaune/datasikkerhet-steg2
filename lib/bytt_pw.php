@@ -40,43 +40,66 @@ try {
         throw new Exception("Passordene er ikke like.");
     }
     
-    // Opprett databasetilkobling med student-rolle
+    // Get database connection with student role
     $conn = get_db_connection('student');
-    
-    // Kall lagret prosedyre for å bytte passord
+    error_log("Database connection established");
+
+    // Hent studentens lagrede passord for verifisering
+    $verify_stmt = $conn->prepare("SELECT passord FROM studenter WHERE student_id = ?");
+    if (!$verify_stmt) {
+        throw new Exception("Feil ved forberedelse av passordsjekk");
+    }
+
+    $verify_stmt->bind_param("i", $student_id);
+    if (!$verify_stmt->execute()) {
+        throw new Exception("Feil ved utførelse av passordsjekk");
+    }
+
+    $result = $verify_stmt->get_result();
+    $user = $result->fetch_assoc();
+    $verify_stmt->close();
+
+    if (!$user || !password_verify($current_pw, $user['passord'])) {
+        throw new Exception("Nåværende passord er feil");
+    }
+
+    // Hash det nye passordet
+    $hashed_new_pw = password_hash($new_pw, PASSWORD_DEFAULT);
+
+    // Forbered kall til prosedyren
     $stmt = $conn->prepare("CALL change_student_password(?, ?, ?)");
     if (!$stmt) {
-        throw new Exception("Feil ved forberedelse av spørring: " . $conn->error);
+        throw new Exception("Feil ved forberedelse av prosedyrekall");
     }
+
+    $stmt->bind_param("iss", $student_id, $current_pw, $hashed_new_pw);
     
-    $stmt->bind_param("iss", $student_id, $current_pw, $new_pw);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        throw new Exception("Feil ved utførelse av prosedyrekall: " . $stmt->error);
+    }
+
     $result = $stmt->get_result();
-    
-    if ($result === false) {
-        throw new Exception("Feil ved bytte av passord.");
+    if (!$result) {
+        throw new Exception("Ingen respons fra prosedyren");
     }
-    
+
     $response = $result->fetch_assoc();
-    
-    if (!$response || $response['success'] != 1) {
-        throw new Exception($response['message'] ?? "Feil ved bytte av passord.");
+    if ($response['result'] === 'ERROR') {
+        throw new Exception($response['message']);
     }
-    
-    // Lukk databasetilkoblingen
+
     $stmt->close();
     $conn->close();
-    
-    // Sett suksessmelding og omdiriger
-    $_SESSION['success'] = "Passordet ditt er endret.";
-    header("Location: dashboard_student.php");
+
+    // Password change successful
+    $_SESSION['pw_message'] = "Passordet ble oppdatert.";
+    header("Location: dashboard.php");
     exit();
-    
+
 } catch (Exception $e) {
-    // Logg feilen
     error_log("Feil i bytt_pw.php: " . $e->getMessage());
+    $_SESSION['pw_message'] = $e->getMessage();
     
-    // Lukk databasetilkoblingen hvis den eksisterer
     if (isset($stmt)) {
         $stmt->close();
     }
@@ -84,9 +107,7 @@ try {
         $conn->close();
     }
     
-    // Sett feilmelding og omdiriger
-    $_SESSION['error'] = $e->getMessage();
-    header("Location: dashboard_student.php");
+    header("Location: dashboard.php");
     exit();
 }
 ?>
