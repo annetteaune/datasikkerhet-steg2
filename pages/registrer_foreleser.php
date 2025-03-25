@@ -68,6 +68,20 @@
 
         <div class="form-container">
             <form class="registration-form" action="../lib/register_teacher_action.php" method="post" enctype="multipart/form-data">
+                <?php
+                session_start();
+                if (isset($_SESSION['error_message'])): ?>
+                    <div class="form-error"><?php echo htmlspecialchars($_SESSION['error_message']); ?></div>
+                    <?php unset($_SESSION['error_message']); ?>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error_messages'])): ?>
+                    <?php foreach ($_SESSION['error_messages'] as $error): ?>
+                        <div class="form-error"><?php echo htmlspecialchars($error); ?></div>
+                    <?php endforeach; ?>
+                    <?php unset($_SESSION['error_messages']); ?>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['error_empty_form'])): ?>
                     <div class="form-error"><?php echo htmlspecialchars($_GET['error_empty_form']); ?></div>
                 <?php endif; ?>

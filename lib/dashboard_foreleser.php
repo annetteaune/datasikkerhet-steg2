@@ -21,52 +21,40 @@ try {
     
     $stmt = $conn->prepare("CALL get_lecturer_unanswered_messages(?)");
     if (!$stmt) {
-        error_log("Failed to prepare get_lecturer_unanswered_messages: " . $conn->error);
-        throw new Exception("Feil ved forberedelse av get_lecturer_unanswered_messages");
+        throw new Exception("Feil ved forberedelse av spørring: " . $conn->error);
     }
 
     $stmt->bind_param("i", $foreleser_id);
     if (!$stmt->execute()) {
-        error_log("Failed to execute get_lecturer_unanswered_messages: " . $stmt->error);
-        throw new Exception("Feil ved henting av meldinger: " . $stmt->error);
+        throw new Exception("Feil ved utførelse av spørring: " . $stmt->error);
+    }
+
+    // Håndter første resultset (SUCCESS/ERROR status)
+    $result = $stmt->get_result();
+    if (!$result) {
+        throw new Exception("Ingen resultset returnert fra prosedyren");
+    }
+
+    $status = $result->fetch_assoc();
+    if ($status['result'] !== 'SUCCESS') {
+        throw new Exception("Feil fra prosedyre: " . ($status['message'] ?? 'Ukjent feil'));
+    }
+
+    // Gå til neste resultset som inneholder meldingene
+    if (!$stmt->next_result()) {
+        throw new Exception("Feil ved henting av meldinger resultset");
     }
 
     $meldinger_result = $stmt->get_result();
-    if ($meldinger_result) {
-        error_log("Number of messages found: " . $meldinger_result->num_rows);
-        if ($meldinger_result->num_rows > 0) {
-            $first_row = $meldinger_result->fetch_assoc();
-            error_log("First message data: " . print_r($first_row, true));
-            $meldinger_result->data_seek(0);
-        }
-    } else {
-        error_log("No result set returned from get_lecturer_unanswered_messages");
+    if (!$meldinger_result) {
+        throw new Exception("Ingen meldinger resultset returnert");
     }
+
+    error_log("Antall meldinger funnet: " . $meldinger_result->num_rows);
+
     $stmt->close();
 
-    // Håndter multiple resultsets
-    while ($conn->more_results() && $conn->next_result()) {
-        if ($res = $conn->store_result()) {
-            $res->free();
-        }
-    }
-
-    // Hent meldinger for foreleserens emner
-    $stmt = $conn->prepare("CALL get_course_messages(?, ?)");
-    if (!$stmt) {
-        throw new Exception("Feil ved forberedelse av get_course_messages");
-    }
-
-    $limit = 10; // Vis de 10 siste meldingene
-    $stmt->bind_param("ii", $foreleser_id, $limit);
-    if (!$stmt->execute()) {
-        throw new Exception("Feil ved henting av emnets meldinger: " . $stmt->error);
-    }
-
-    $emner_meldinger_result = $stmt->get_result();
-    $stmt->close();
-
-    // Håndter multiple resultsets
+    // Håndter eventuelle gjenværende resultsets
     while ($conn->more_results() && $conn->next_result()) {
         if ($res = $conn->store_result()) {
             $res->free();
@@ -75,8 +63,10 @@ try {
 
 } catch (Exception $e) {
     error_log("Feil i dashboard_foreleser.php: " . $e->getMessage());
-    $_SESSION['error'] = "En feil oppstod ved henting av data. Vennligst prøv igjen senere.";
-    close_db_connection($conn);
+    $_SESSION['error'] = "En feil oppstod ved henting av data: " . $e->getMessage();
+    if (isset($conn)) {
+        close_db_connection($conn);
+    }
     header("Location: ../pages/error.php");
     exit();
 }
@@ -148,6 +138,7 @@ try {
                                         <option 
                                             value="<?php echo htmlspecialchars($row['melding_id']); ?>" 
                                             data-full="<?php echo htmlspecialchars($row['innhold']); ?>"
+                                            data-emne="<?php echo htmlspecialchars($row['emne_navn']); ?>"
                                         >
                                             <?php 
                                             echo htmlspecialchars($row['emne_navn']) . ": " . 
@@ -216,11 +207,12 @@ try {
         document.getElementById('melding_id').addEventListener('change', function() {
             var selectedOption = this.options[this.selectedIndex];
             var fullMessage = selectedOption.getAttribute('data-full');
+            var emneNavn = selectedOption.getAttribute('data-emne');
             var preview = document.getElementById('messagePreview');
             var replySection = document.getElementById('replySection');
             
             if (fullMessage && preview) {
-                preview.innerHTML = '<strong>Fullstendig melding:</strong><br>' + fullMessage;
+                preview.innerHTML = '<strong>' + emneNavn + '</strong><br>' + fullMessage;
                 preview.style.display = 'block';
                 replySection.style.display = 'block';
             } else {

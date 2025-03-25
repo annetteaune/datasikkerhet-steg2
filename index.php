@@ -79,39 +79,5 @@
             <p>&copy; 2024 HearMeOut. Alle rettigheter reservert.</p>
         </div>
     </footer>
-    <script>
-        document.getElementById("toggleComments").addEventListener("click", function() {
-            const wrapper = document.getElementById("commentWrapper");
-            
-            // Sjekk nåværende visningstilstand
-            if (wrapper.style.display === "none") {
-                wrapper.style.display = "block"; // Vis feltet
-            } else {
-                wrapper.style.display = "none"; // Skjul feltet
-            }
-        });
-
-        document.getElementById("toggleAddComment").addEventListener("click", function() {
-            const wrapper = document.getElementById("commentInputWrapper");
-            
-            // Sjekk nåværende visningstilstand
-            if (wrapper.style.display === "none") {
-                wrapper.style.display = "flex"; // Vis feltet
-            } else {
-                wrapper.style.display = "none"; // Skjul feltet
-            }
-        });
-
-        document.getElementById("toggleReportMessage").addEventListener("click", function() {
-            const wrapper = document.getElementById("reportInputWrapper");
-            
-            // Sjekk nåværende visningstilstand
-            if (wrapper.style.display === "none") {
-                wrapper.style.display = "flex"; // Vis feltet
-            } else {
-                wrapper.style.display = "none"; // Skjul feltet
-            }
-        });
-    </script>
 </body>
 </html>

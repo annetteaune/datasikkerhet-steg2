@@ -37,8 +37,8 @@ try {
 		exit();
 	}
 
-	// Get database connection with admin role (needed for registration)
-	$conn = get_db_connection('admin');
+	// Get database connection with guest role (since non-logged in users are guests)
+	$conn = get_db_connection('guest');
 
 	// Start transaction
 	$conn->begin_transaction();
