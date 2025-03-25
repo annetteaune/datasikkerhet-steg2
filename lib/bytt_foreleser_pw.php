@@ -68,52 +68,47 @@ try {
     // Hash det nye passordet
     $hashed_new_pw = password_hash($new_pw, PASSWORD_DEFAULT);
 
-    // Kall prosedyren for å oppdatere passordet
-    $update_stmt = $conn->prepare("CALL change_lecturer_password(?, ?)");
-    if (!$update_stmt) {
-        throw new Exception("Feil ved forberedelse av passordbytte");
+    // Forbered kall til prosedyren
+    $stmt = $conn->prepare("CALL change_lecturer_password(?, ?, ?)");
+    if (!$stmt) {
+        throw new Exception("Feil ved forberedelse av prosedyrekall");
     }
 
-    $update_stmt->bind_param("is", $foreleser_id, $hashed_new_pw);
-    if (!$update_stmt->execute()) {
-        throw new Exception("Feil ved utførelse av passordbytte");
-    }
-
-    $result = $update_stmt->get_result();
-    if (!$result) {
-        throw new Exception("Ingen respons fra databasen");
-    }
+    $stmt->bind_param("iss", $foreleser_id, $current_pw, $hashed_new_pw);
     
+    if (!$stmt->execute()) {
+        throw new Exception("Feil ved utførelse av prosedyrekall: " . $stmt->error);
+    }
+
+    $result = $stmt->get_result();
+    if (!$result) {
+        throw new Exception("Ingen respons fra prosedyren");
+    }
+
     $response = $result->fetch_assoc();
     if ($response['result'] === 'ERROR') {
         throw new Exception($response['message']);
     }
-    
-    $update_stmt->close();
+
+    $stmt->close();
     $conn->close();
-    
+
     // Password change successful
     $_SESSION['pw_message'] = "Passordet ble oppdatert.";
     header("Location: dashboard_foreleser.php");
     exit();
-    
+
 } catch (Exception $e) {
-    // Logg feilen
     error_log("Feil i bytt_foreleser_pw.php: " . $e->getMessage());
+    $_SESSION['pw_message'] = $e->getMessage();
     
-    // Lukk databasetilkoblingen hvis den eksisterer
-    if (isset($verify_stmt) && $verify_stmt instanceof mysqli_stmt) {
-        $verify_stmt->close();
-    }
-    if (isset($update_stmt) && $update_stmt instanceof mysqli_stmt) {
-        $update_stmt->close();
+    if (isset($stmt)) {
+        $stmt->close();
     }
     if (isset($conn)) {
-        close_db_connection($conn);
+        $conn->close();
     }
     
-    // Sett feilmelding og omdiriger
-    $_SESSION['pw_message'] = $e->getMessage();
     header("Location: dashboard_foreleser.php");
     exit();
 }
