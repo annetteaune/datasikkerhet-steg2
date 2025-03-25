@@ -11,13 +11,13 @@
     <h2>Autentisering og Registrering:</h2>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=register&subresource=student</h3>
+      <h3>POST /api/index.php?endpoint=register&subresource=student</h3>
       <p><strong>Formål:</strong> Registrere ny student</p>
       <p><strong>Data:</strong> fornavn, etternavn, epost, passord</p>
     </div>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=register&subresource=lecturer</h3>
+      <h3>POST /api/index.php?endpoint=register&subresource=lecturer</h3>
       <p><strong>Formål:</strong> Registrere ny foreleser med emne</p>
       <p>
         <strong>Data:</strong> fornavn, etternavn, epost, passord, bilde,
@@ -26,7 +26,7 @@
     </div>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=login</h3>
+      <h3>POST /api/index.php?endpoint=login</h3>
       <p><strong>Formål:</strong> Innlogging for både student og foreleser</p>
       <p><strong>Data:</strong> email, password</p>
     </div>
@@ -34,13 +34,13 @@
     <h2>Brukerhåndtering:</h2>
 
     <div class="endpoint">
-      <h3>GET /api/api/index.php?endpoint=student&id=X</h3>
+      <h3>GET /api/index.php?endpoint=student&id=X</h3>
       <p><strong>Formål:</strong> Hente informasjon om en student</p>
       <p><strong>Parametre:</strong> id (student_id)</p>
     </div>
 
     <div class="endpoint">
-      <h3>GET /api/api/index.php?endpoint=lecturer&id=X</h3>
+      <h3>GET /api/index.php?endpoint=lecturer&id=X</h3>
       <p><strong>Formål:</strong> Hente informasjon om en foreleser</p>
       <p><strong>Parametre:</strong> id (foreleser_id)</p>
     </div>
@@ -48,31 +48,58 @@
     <h2>Meldingshåndtering:</h2>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=messages</h3>
+      <h3>POST /api/index.php?endpoint=messages</h3>
       <p><strong>Formål:</strong> Student sender melding til emne</p>
       <p><strong>Data:</strong> student_id, emne_id, innhold</p>
     </div>
 
     <div class="endpoint">
-      <h3>GET /api/api/index.php?endpoint=messages&emne_id=X&pin_kode=Y</h3>
+      <h3>GET /api/index.php?endpoint=messages&emne_kode=X&pin_kode=Y</h3>
       <p><strong>Formål:</strong> Hente meldinger for et emne (krever PIN)</p>
-      <p><strong>Parametre:</strong> emne_id, pin_kode</p>
+      <p>
+        <strong>Parametre:</strong> emne_kode (f.eks. TESTVYQF2025), pin_kode
+        (4-sifret kode)
+      </p>
+      <p>
+        <strong>Eksempel:</strong>
+        /api/index.php?endpoint=messages&emne_kode=TESTVYQF2025&pin_kode=1111
+      </p>
+      <p><strong>Respons:</strong></p>
+      <pre><code>{
+    "status": "success",
+    "data": [
+        {
+            "melding_id": 1,
+            "melding_innhold": "Eksempel melding",
+            "melding_tidspunkt": "2025-03-25 15:00:00",
+            "student_navn": "Anonym student",
+            "emne_navn": "Test Emne",
+            "emne_kode": "TESTVYQF2025",
+            "svar": {
+                "svar_id": 1,
+                "innhold": "Svar på meldingen",
+                "tidspunkt": "2025-03-25 15:30:00",
+                "foreleser_navn": "Per Foreleser"
+            }
+        }
+    ]
+}</code></pre>
     </div>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=response</h3>
+      <h3>POST /api/index.php?endpoint=response</h3>
       <p><strong>Formål:</strong> Foreleser svarer på melding</p>
       <p><strong>Data:</strong> melding_id, foreleser_id, innhold</p>
     </div>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=comment</h3>
+      <h3>POST /api/index.php?endpoint=comment</h3>
       <p><strong>Formål:</strong> Gjestebruker legger til kommentar</p>
       <p><strong>Data:</strong> melding_id, innhold</p>
     </div>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=report</h3>
+      <h3>POST /api/index.php?endpoint=report</h3>
       <p><strong>Formål:</strong> Rapportere upassende melding</p>
       <p><strong>Data:</strong> melding_id, grunn</p>
     </div>
@@ -80,18 +107,18 @@
     <h2>Emneadministrasjon:</h2>
 
     <div class="endpoint">
-      <h3>GET /api/api/index.php?endpoint=course&emne_id=X&pin_kode=Y</h3>
+      <h3>GET /api/index.php?endpoint=course&emne_id=X&pin_kode=Y</h3>
       <p><strong>Formål:</strong> Hente detaljert informasjon om emne</p>
       <p><strong>Parametre:</strong> emne_id, pin_kode</p>
     </div>
 
     <div class="endpoint">
-      <h3>GET /api/api/index.php?endpoint=courses</h3>
+      <h3>GET /api/index.php?endpoint=courses</h3>
       <p><strong>Formål:</strong> Liste over alle tilgjengelige emner</p>
     </div>
 
     <div class="endpoint">
-      <h3>POST /api/api/index.php?endpoint=password&subresource=change</h3>
+      <h3>POST /api/index.php?endpoint=password&subresource=change</h3>
       <p><strong>Formål:</strong> Endre passord for bruker</p>
       <p>
         <strong>Data:</strong> user_id, old_password, new_password, user_type
@@ -101,27 +128,27 @@
     <h2>Eksempler på bruk:</h2>
 
     <h3>Liste alle emner:</h3>
-    <pre><code>GET /api/api/index.php?endpoint=courses</code></pre>
+    <pre><code>GET /api/index.php?endpoint=courses</code></pre>
 
     <h3>Registrere student:</h3>
-    <pre><code>POST /api/api/index.php?endpoint=register&subresource=student
-    {
-        "fornavn": "Ola",
-        "etternavn": "Nordmann",
-        "epost": "ola@example.com",
-        "passord": "sikkertPassord123"
-    }</code></pre>
+    <pre><code>POST /api/index.php?endpoint=register&subresource=student
+{
+    "fornavn": "Ola",
+    "etternavn": "Nordmann",
+    "epost": "ola@example.com",
+    "passord": "sikkertPassord123"
+}</code></pre>
 
     <h3>Hente meldinger for et emne:</h3>
-    <pre><code>GET /api/api/index.php?endpoint=messages&emne_id=123&pin_kode=1234</code></pre>
+    <pre><code>GET /api/index.php?endpoint=messages&emne_kode=TESTVYQF2025&pin_kode=1111</code></pre>
 
     <h3>Sende ny melding:</h3>
-    <pre><code>POST /api/api/index.php?endpoint=messages
-    {
-        "student_id": 1,
-        "emne_id": 123,
-        "innhold": "Dette er en testmelding"
-    }</code></pre>
+    <pre><code>POST /api/index.php?endpoint=messages
+{
+    "student_id": 1,
+    "emne_id": 123,
+    "innhold": "Dette er en testmelding"
+}</code></pre>
 
     <style>
       body {

@@ -700,6 +700,8 @@ Redusert antall databasekall ved bruk av views
 Optimalisert datastruktur
 Bedre caching av tilkoblinger
 
+ved uthenting av meldinger i api er studentens navn sensurert
+
 Database.php:
 Forbedret tilkoblingshåndtering:
 Bedre validering av eksisterende tilkoblinger

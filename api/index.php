@@ -11,6 +11,9 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/Database.php';
 require_once __DIR__ . '/includes/API.php';
 
+$db = new Database();
+$conn = $db->getConnection('api');
+
 $api = new API();
 $method = $_SERVER['REQUEST_METHOD'];
 $endpoint = isset($_GET['endpoint']) ? $_GET['endpoint'] : '';
@@ -30,6 +33,98 @@ if ($method === 'OPTIONS') {
 function isAuthenticated() {
     session_start();
     return isset($_SESSION['user_id']) && isset($_SESSION['user_type']);
+}
+
+function getMessages($conn, $params) {
+    try {
+        // Valider påkrevde parametere
+        if (!isset($params['emne_kode']) || !isset($params['pin_kode'])) {
+            return array(
+                'status' => 'error',
+                'message' => 'Mangler påkrevde parametere (emne_kode og pin_kode)'
+            );
+        }
+
+        // Hent emne_id basert på emne_kode
+        $stmt = $conn->prepare("SELECT emne_id FROM emner WHERE emne_kode = ?");
+        if (!$stmt) {
+            throw new Exception("Feil ved forberedelse av emne-spørring: " . $conn->error);
+        }
+
+        $stmt->bind_param("s", $params['emne_kode']);
+        if (!$stmt->execute()) {
+            throw new Exception("Feil ved utførelse av emne-spørring: " . $stmt->error);
+        }
+
+        $result = $stmt->get_result();
+        $emne = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!$emne) {
+            return array(
+                'status' => 'error',
+                'message' => 'Emne ikke funnet'
+            );
+        }
+
+        // Kall prosedyren med emne_id og pin_kode
+        $stmt = $conn->prepare("CALL get_course_messages(?, ?)");
+        if (!$stmt) {
+            throw new Exception("Feil ved forberedelse av meldingsprosedyre: " . $conn->error);
+        }
+
+        $stmt->bind_param("is", $emne['emne_id'], $params['pin_kode']);
+        if (!$stmt->execute()) {
+            throw new Exception("Feil ved utførelse av meldingsprosedyre: " . $stmt->error);
+        }
+
+        // Første resultat er status
+        $result = $stmt->get_result();
+        $status = $result->fetch_assoc();
+
+        if ($status['result'] === 'ERROR') {
+            return array(
+                'status' => 'error',
+                'message' => $status['message']
+            );
+        }
+
+        // Neste resultat er meldingene
+        $stmt->next_result();
+        $result = $stmt->get_result();
+        $messages = array();
+        
+        while ($row = $result->fetch_assoc()) {
+            $messages[] = array(
+                'melding_id' => $row['melding_id'],
+                'melding_innhold' => $row['melding_innhold'],
+                'melding_tidspunkt' => $row['melding_tidspunkt'],
+                'student_navn' => 'Anonym student',
+                'emne_navn' => $row['emne_navn'],
+                'emne_kode' => $row['emne_kode'],
+                'svar' => $row['svar_id'] ? array(
+                    'svar_id' => $row['svar_id'],
+                    'innhold' => $row['svar_innhold'],
+                    'tidspunkt' => $row['svar_tidspunkt'],
+                    'foreleser_navn' => $row['foreleser_fornavn'] . ' ' . $row['foreleser_etternavn']
+                ) : null
+            );
+        }
+
+        $stmt->close();
+
+        return array(
+            'status' => 'success',
+            'data' => $messages
+        );
+
+    } catch (Exception $e) {
+        error_log("Feil i getMessages: " . $e->getMessage());
+        return array(
+            'status' => 'error',
+            'message' => 'En feil oppstod ved henting av meldinger: ' . $e->getMessage()
+        );
+    }
 }
 
 try {
@@ -101,14 +196,17 @@ try {
             
         case 'messages':
             if ($method === 'GET') {
-                $emne_id = isset($_GET['emne_id']) ? $_GET['emne_id'] : null;
+                $emne_kode = isset($_GET['emne_kode']) ? $_GET['emne_kode'] : null;
                 $pin_kode = isset($_GET['pin_kode']) ? $_GET['pin_kode'] : null;
                 
-                if (!$emne_id || !$pin_kode) {
-                    throw new Exception('Emne ID og PIN-kode er påkrevd');
+                if (!$emne_kode || !$pin_kode) {
+                    throw new Exception('Mangler påkrevde parametere (emne_kode og pin_kode)');
                 }
                 
-                $response = $api->getMessages($emne_id, $pin_kode);
+                $response = getMessages($conn, [
+                    'emne_kode' => $emne_kode,
+                    'pin_kode' => $pin_kode
+                ]);
             } elseif ($method === 'POST') {
                 $data = json_decode(file_get_contents('php://input'), true);
                 
