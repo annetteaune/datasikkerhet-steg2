@@ -37,7 +37,11 @@ try {
     $nytt_passord = bin2hex(random_bytes(8)); // 16 tegn langt
     
     // Hash det nye passordet
-    $passord_hash = password_hash($nytt_passord, PASSWORD_DEFAULT);
+    $passord_hash = password_hash($nytt_passord, PASSWORD_ARGON2ID, [
+        'memory_cost' => 65536,  // 64MB
+        'time_cost' => 4,        // 4 iterations
+        'threads' => 3           // 3 threads
+    ]);
     
     // Oppdater passordet i databasen
     $foreleser = $result->fetch_assoc();

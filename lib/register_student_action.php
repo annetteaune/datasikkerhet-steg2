@@ -45,7 +45,11 @@ try {
 
 	try {
 		// Hash the password
-		$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+		$hashed_password = password_hash($password, PASSWORD_ARGON2ID, [
+			'memory_cost' => 65536,  // 64MB
+			'time_cost' => 4,        // 4 iterations
+			'threads' => 3           // 3 threads
+		]);
 		error_log("Generated password hash: " . $hashed_password);
 
 		// Call the register_student stored procedure

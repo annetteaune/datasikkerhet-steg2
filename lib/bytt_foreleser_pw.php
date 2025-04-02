@@ -66,7 +66,11 @@ try {
     }
 
     // Hash det nye passordet
-    $hashed_new_pw = password_hash($new_pw, PASSWORD_DEFAULT);
+    $hashed_new_pw = password_hash($new_pw, PASSWORD_ARGON2ID, [
+        'memory_cost' => 65536,  // 64MB
+        'time_cost' => 4,        // 4 iterations
+        'threads' => 3           // 3 threads
+    ]);
 
     // Forbered kall til prosedyren
     $stmt = $conn->prepare("CALL change_lecturer_password(?, ?, ?)");
