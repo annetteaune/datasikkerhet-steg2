@@ -1,4 +1,10 @@
 <?php
+// Configure secure session parameters before starting the session
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
+
 session_start();
 require_once 'db.php';
 
@@ -55,6 +61,9 @@ try {
     $_SESSION['foreleser_etternavn'] = $data['foreleser_etternavn'];
     $_SESSION['foreleser_bilde'] = $data['foreleser_bilde'];
     $_SESSION['user_type'] = 'guest';
+    
+    // Regenerate session ID to prevent session fixation
+    session_regenerate_id(true);
     
     // 6. Lukk databasetilkoblingen
     $conn->close();
