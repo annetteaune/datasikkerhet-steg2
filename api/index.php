@@ -1,15 +1,17 @@
 <?php
+// Disable error reporting for notices and warnings in production
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
+ini_set('display_errors', 0);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/Database.php';
 require_once __DIR__ . '/includes/API.php';
+require_once '../lib/rate_limiter.php';
 
 $db = new Database();
 $conn = $db->getConnection('api');
@@ -18,6 +20,18 @@ $api = new API();
 $method = $_SERVER['REQUEST_METHOD'];
 $endpoint = isset($_GET['endpoint']) ? $_GET['endpoint'] : '';
 $subresource = isset($_GET['subresource']) ? $_GET['subresource'] : '';
+
+// Configure more restrictive limits for API endpoints
+define('API_MAX_REQUESTS', 30);  // Maximum number of requests allowed per window
+define('API_TIME_WINDOW', 60);   // Time window in seconds (1 minute)
+define('API_BLOCK_TIME', 300);   // Block time in seconds (5 minutes)
+
+// Override the default rate limit constants for API endpoints
+define('MAX_REQUESTS', API_MAX_REQUESTS);
+define('TIME_WINDOW', API_TIME_WINDOW);
+define('BLOCK_TIME', API_BLOCK_TIME);
+
+apply_rate_limit();
 
 error_log("Method: " . $method);
 error_log("Endpoint: " . $endpoint);

@@ -1,3 +1,7 @@
+<?php
+require_once 'lib/rate_limiter.php';
+apply_rate_limit();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

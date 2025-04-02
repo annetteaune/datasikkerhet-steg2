@@ -1,4 +1,7 @@
 <?php
+require_once 'rate_limiter.php';
+apply_rate_limit();
+
 // Start the session
 session_start();
 
