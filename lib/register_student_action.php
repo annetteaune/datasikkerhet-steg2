@@ -1,36 +1,39 @@
 <?php
-// Enable error reporting for debugging (remove in production)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Configure secure session parameters before starting the session
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
 
-require 'db.php';
+session_start();
+require_once 'db.php';
+require_once 'registration_attempts.php';
 
 try {
-	// Debug: Log POST data
-	error_log("POST data received: " . print_r($_POST, true));
+	// Get client IP
+	$ip = $_SERVER['REMOTE_ADDR'];
 	
-	// Get and validate input
-	$fornavn = trim($_POST['fornavn'] ?? '');
-	$etternavn = trim($_POST['etternavn'] ?? '');
-	$epost = trim($_POST['epost'] ?? '');
-	$passord = $_POST['passord'] ?? '';
-	$bekreft_passord = $_POST['bekreft_passord'] ?? '';
-	
-	// Debug: Log processed input
-	error_log("Processed input: fornavn='$fornavn', etternavn='$etternavn', epost='$epost'");
-	
-	// Basic validation
-	if (empty($fornavn) || empty($etternavn) || empty($epost) || empty($passord) || empty($bekreft_passord)) {
-		$missing_fields = [];
-		if (empty($fornavn)) $missing_fields[] = 'fornavn';
-		if (empty($etternavn)) $missing_fields[] = 'etternavn';
-		if (empty($epost)) $missing_fields[] = 'epost';
-		if (empty($passord)) $missing_fields[] = 'passord';
-		if (empty($bekreft_passord)) $missing_fields[] = 'bekreft_passord';
-		
-		error_log("Missing fields: " . implode(', ', $missing_fields));
-		throw new Exception("Vennligst fyll ut alle felt.");
+	// Check registration rate limit
+	$limit_check = check_registration_limit($ip);
+	if ($limit_check['limited']) {
+		$remaining_minutes = ceil($limit_check['remaining_time'] / 60);
+		throw new Exception("For mange registreringsforsøk. Vennligst vent {$remaining_minutes} minutter før du prøver igjen.");
 	}
+	
+	// Validate required fields
+	$required_fields = ['fornavn', 'etternavn', 'epost', 'passord', 'bekreft_passord'];
+	foreach ($required_fields as $field) {
+		if (!isset($_POST[$field]) || empty(trim($_POST[$field]))) {
+			throw new Exception("Alle felt må fylles ut.");
+		}
+	}
+	
+	// Sanitize and validate input
+	$fornavn = trim($_POST['fornavn']);
+	$etternavn = trim($_POST['etternavn']);
+	$epost = trim($_POST['epost']);
+	$passord = $_POST['passord'];
+	$bekreft_passord = $_POST['bekreft_passord'];
 	
 	// Validate email format
 	if (!filter_var($epost, FILTER_VALIDATE_EMAIL)) {
@@ -38,9 +41,8 @@ try {
 	}
 	
 	// Validate password strength
-	$password_validation = validate_password($passord);
-	if (!$password_validation['valid']) {
-		throw new Exception($password_validation['message']);
+	if (!validate_password($passord)) {
+		throw new Exception("Passordet må være minst 8 tegn langt og inneholde minst én stor bokstav, ett tall og ett spesialtegn.");
 	}
 	
 	// Check if passwords match
@@ -51,62 +53,57 @@ try {
 	// Get database connection
 	$conn = get_db_connection('guest');
 	
-	// Check if email already exists
-	$stmt = $conn->prepare("SELECT epost FROM studenter WHERE epost = ?");
-	if (!$stmt) {
-		throw new Exception("Database query failed: " . $conn->error);
+	// Start transaction
+	$conn->begin_transaction();
+	
+	try {
+		// Check if email already exists
+		$stmt = $conn->prepare("SELECT student_id FROM studenter WHERE epost = ?");
+		$stmt->bind_param("s", $epost);
+		$stmt->execute();
+		if ($stmt->get_result()->num_rows > 0) {
+			throw new Exception("E-postadressen er allerede i bruk.");
+		}
+		$stmt->close();
+		
+		// Hash password
+		$hashed_password = password_hash($passord, PASSWORD_ARGON2ID);
+		
+		// Insert student - only using the columns that exist in the table
+		$stmt = $conn->prepare("INSERT INTO studenter (fornavn, etternavn, epost, passord) VALUES (?, ?, ?, ?)");
+		$stmt->bind_param("ssss", $fornavn, $etternavn, $epost, $hashed_password);
+		$stmt->execute();
+		$stmt->close();
+		
+		// Record successful registration
+		record_registration_attempt($ip);
+		
+		// Commit transaction
+		$conn->commit();
+		
+		// Set success message
+		$_SESSION['success'] = "Registrering vellykket! Du kan nå logge inn.";
+		header("Location: ../pages/student_login.php");
+		exit();
+		
+	} catch (Exception $e) {
+		// Rollback transaction on error
+		$conn->rollback();
+		throw $e;
 	}
-	
-	$stmt->bind_param("s", $epost);
-	$stmt->execute();
-	$result = $stmt->get_result();
-	
-	if ($result->num_rows > 0) {
-		throw new Exception("Denne e-postadressen er allerede registrert.");
-	}
-	
-	// Hash password with Argon2
-	$hashed_password = password_hash($passord, PASSWORD_ARGON2ID, [
-		'memory_cost' => 65536,
-		'time_cost' => 4,
-		'threads' => 3
-	]);
-	
-	// Insert new student
-	$stmt = $conn->prepare("INSERT INTO studenter (fornavn, etternavn, epost, passord) VALUES (?, ?, ?, ?)");
-	if (!$stmt) {
-		throw new Exception("Database query failed: " . $conn->error);
-	}
-	
-	$stmt->bind_param("ssss", $fornavn, $etternavn, $epost, $hashed_password);
-	
-	if (!$stmt->execute()) {
-		throw new Exception("Kunne ikke registrere student: " . $stmt->error);
-	}
-	
-	// Close database connections
-	$stmt->close();
-	$conn->close();
-	
-	// Set success message and redirect
-	$_SESSION['success_message'] = "Registrering vellykket! Du kan nå logge inn.";
-	header("Location: ../pages/student_login.php");
-	exit();
 	
 } catch (Exception $e) {
+	// Log error
 	error_log("Registration error: " . $e->getMessage());
 	
-	// Close database connections if they exist
-	if (isset($stmt)) $stmt->close();
-	if (isset($conn)) $conn->close();
+	// Close database connection if it exists
+	if (isset($conn)) {
+		$conn->close();
+	}
 	
-	// Store form data and error message in session
-	$_SESSION['form_data'] = [
-		'fornavn' => $fornavn ?? '',
-		'etternavn' => $etternavn ?? '',
-		'epost' => $epost ?? ''
-	];
-	$_SESSION['error_message'] = $e->getMessage();
+	// Store error message and form data in session
+	$_SESSION['error'] = $e->getMessage();
+	$_SESSION['form_data'] = $_POST;
 	
 	// Redirect back to registration form
 	header("Location: ../pages/registrer_student.php");

@@ -3,12 +3,29 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configure secure session parameters before starting the session
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
+
 // Start the session
 session_start();
 
 require 'db.php';
+require_once 'registration_attempts.php';
 
 try {
+	// Get client IP
+	$ip = $_SERVER['REMOTE_ADDR'];
+	
+	// Check registration rate limit
+	$limit_check = check_registration_limit($ip);
+	if ($limit_check['limited']) {
+		$remaining_minutes = ceil($limit_check['remaining_time'] / 60);
+		throw new Exception("For mange registreringsforsøk. Vennligst vent {$remaining_minutes} minutter før du prøver igjen.");
+	}
+	
 	// Debug: Log POST data
 	error_log("POST data received: " . print_r($_POST, true));
 	
@@ -89,7 +106,7 @@ try {
 	
 	try {
 		// Check if email already exists
-		$stmt = $conn->prepare("SELECT epost FROM foreleser WHERE epost = ?");
+		$stmt = $conn->prepare("SELECT foreleser_id FROM foreleser WHERE epost = ?");
 		if (!$stmt) {
 			throw new Exception("Database query failed: " . $conn->error);
 		}

@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,9 +31,19 @@
         </div>
 
         <div class="form-container">
-            <?php if (isset($_GET['error'])): ?>
-                <div class="form-error"><?php echo htmlspecialchars($_GET['error']); ?></div>
-            <?php endif; ?>
+            <?php 
+            // Display error message if exists
+            if (isset($_SESSION['error'])) {
+                echo '<div class="error-message">' . htmlspecialchars($_SESSION['error']) . '</div>';
+                unset($_SESSION['error']); // Clear the error message after displaying
+            }
+            
+            // Display success message if exists
+            if (isset($_SESSION['success'])) {
+                echo '<div class="success-message">' . htmlspecialchars($_SESSION['success']) . '</div>';
+                unset($_SESSION['success']); // Clear the success message after displaying
+            }
+            ?>
 
             <form action="../lib/register_student_action.php" method="post">
                 <div class="form-group">
