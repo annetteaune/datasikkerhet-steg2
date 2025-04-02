@@ -3,21 +3,39 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configure secure session parameters before starting the session
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
+
 // Start the session
 session_start();
 
-// Include database connection file
+// Include required files
 require 'db.php';
+require 'login_attempts.php';
 
 // Check if the form was submitted via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
+        // Check rate limiting first
+        $rate_limit = check_rate_limit();
+        if ($rate_limit['locked']) {
+            throw new Exception("For mange innloggingsforsøk. Vennligst prøv igjen om " . $rate_limit['time_remaining'] . " minutter.");
+        }
+        
         // Get and validate input
-        $email = trim($_POST['email'] ?? '');
+        $email = sanitize_input($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         
         if (empty($email) || empty($password)) {
             throw new Exception("Vennligst fyll ut alle felt.");
+        }
+        
+        // Validate email format
+        if (!validate_email($email)) {
+            throw new Exception("Ugyldig e-postadresse.");
         }
         
         // Get database connection with guest role
@@ -34,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $result = $stmt->get_result();
         
         if ($result->num_rows === 0) {
+            // Record failed attempt
+            record_failed_attempt($_SERVER['REMOTE_ADDR']);
             throw new Exception("Ugyldig e-post eller passord.");
         }
         
@@ -41,8 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Verify password using Argon2
         if (!password_verify($password, $user['passord'])) {
+            // Record failed attempt
+            record_failed_attempt($_SERVER['REMOTE_ADDR']);
             throw new Exception("Ugyldig e-post eller passord.");
         }
+        
+        // Reset login attempts on successful login
+        reset_login_attempts($_SERVER['REMOTE_ADDR']);
         
         // Set session variables with names matching dashboard expectations
         $_SESSION['student_id'] = $user['bruker_id'];
@@ -50,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['student_lname'] = $user['etternavn'];
         $_SESSION['student_email'] = $user['epost'];
         $_SESSION['user_type'] = $user['user_type'];
+        
+        // Regenerate session ID to prevent session fixation
+        session_regenerate_id(true);
         
         // Close database connections
         $stmt->close();
