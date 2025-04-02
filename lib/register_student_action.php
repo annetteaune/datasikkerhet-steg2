@@ -6,101 +6,110 @@ ini_set('display_errors', 1);
 require 'db.php';
 
 try {
-	// Validate form data
-	$fname = trim($_POST['fornavn'] ?? '');
-	$lname = trim($_POST['etternavn'] ?? '');
-	$email = trim($_POST['email'] ?? '');
-	$password = trim($_POST['passord'] ?? '');
-	$confirm_password = trim($_POST['bekreft_passord'] ?? '');
-
-	$errors = [];
-
-	// Validate required fields
-	if (empty($fname) || empty($lname) || empty($email) || empty($password) || empty($confirm_password)) {
-		$errors[] = "Alle felt må fylles ut.";
-	}
-
-	// Validate password match
-	if ($password !== $confirm_password) {
-		$errors[] = "Passordene må være like.";
-	}
-
-	// Validate password length
-	if (strlen($password) < 8) {
-		$errors[] = "Passordet må være minst 8 tegn langt.";
-	}
-
-	// If there are validation errors, redirect back with error messages
-	if (!empty($errors)) {
-		$_SESSION['error_messages'] = $errors;
-		header("Location: ../pages/registrer_student.php?error=1");
-		exit();
-	}
-
-	// Get database connection with guest role (since non-logged in users are guests)
-	$conn = get_db_connection('guest');
-
-	// Start transaction
-	$conn->begin_transaction();
-
-	try {
-		// Hash the password
-		$hashed_password = password_hash($password, PASSWORD_ARGON2ID, [
-			'memory_cost' => 65536,  // 64MB
-			'time_cost' => 4,        // 4 iterations
-			'threads' => 3           // 3 threads
-		]);
-		error_log("Generated password hash: " . $hashed_password);
-
-		// Call the register_student stored procedure
-		$stmt = $conn->prepare("CALL register_student(?, ?, ?, ?)");
-		if (!$stmt) {
-			throw new Exception("Database query failed: " . $conn->error);
-		}
-
-		$stmt->bind_param("ssss", $fname, $lname, $email, $hashed_password);
-		error_log("Attempting to register student with email: " . $email);
-		$stmt->execute();
+	// Debug: Log POST data
+	error_log("POST data received: " . print_r($_POST, true));
+	
+	// Get and validate input
+	$fornavn = trim($_POST['fornavn'] ?? '');
+	$etternavn = trim($_POST['etternavn'] ?? '');
+	$epost = trim($_POST['epost'] ?? '');
+	$passord = $_POST['passord'] ?? '';
+	$bekreft_passord = $_POST['bekreft_passord'] ?? '';
+	
+	// Debug: Log processed input
+	error_log("Processed input: fornavn='$fornavn', etternavn='$etternavn', epost='$epost'");
+	
+	// Basic validation
+	if (empty($fornavn) || empty($etternavn) || empty($epost) || empty($passord) || empty($bekreft_passord)) {
+		$missing_fields = [];
+		if (empty($fornavn)) $missing_fields[] = 'fornavn';
+		if (empty($etternavn)) $missing_fields[] = 'etternavn';
+		if (empty($epost)) $missing_fields[] = 'epost';
+		if (empty($passord)) $missing_fields[] = 'passord';
+		if (empty($bekreft_passord)) $missing_fields[] = 'bekreft_passord';
 		
-		// Store all results to prevent "Commands out of sync" error
-		do {
-			if ($result = $stmt->get_result()) {
-				$response = $result->fetch_assoc();
-				$result->free();
-			}
-		} while ($stmt->more_results() && $stmt->next_result());
-
-		if (!isset($response) || !$response) {
-			throw new Exception("Kunne ikke hente resultat fra registreringsprosedyren");
-		}
-
-		if ($response['result'] === 'SUCCESS') {
-			// Commit transaction
-			$conn->commit();
-			
-			// Close resources
-			$stmt->close();
-			close_db_connection($conn);
-
-			// Set success message and redirect
-			$_SESSION['success_message'] = "Registrering vellykket! Du kan nå logge inn.";
-			header("Location: ../pages/login.php?registration=success");
-			exit();
-		} else {
-			throw new Exception($response['message'] ?? "En feil oppstod under registrering.");
-		}
-
-	} catch (Exception $e) {
-		// Rollback transaction
-		$conn->rollback();
-		throw $e;
+		error_log("Missing fields: " . implode(', ', $missing_fields));
+		throw new Exception("Vennligst fyll ut alle felt.");
 	}
-
+	
+	// Validate email format
+	if (!filter_var($epost, FILTER_VALIDATE_EMAIL)) {
+		throw new Exception("Ugyldig e-postadresse.");
+	}
+	
+	// Validate password strength
+	$password_validation = validate_password($passord);
+	if (!$password_validation['valid']) {
+		throw new Exception($password_validation['message']);
+	}
+	
+	// Check if passwords match
+	if ($passord !== $bekreft_passord) {
+		throw new Exception("Passordene stemmer ikke overens.");
+	}
+	
+	// Get database connection
+	$conn = get_db_connection('guest');
+	
+	// Check if email already exists
+	$stmt = $conn->prepare("SELECT epost FROM studenter WHERE epost = ?");
+	if (!$stmt) {
+		throw new Exception("Database query failed: " . $conn->error);
+	}
+	
+	$stmt->bind_param("s", $epost);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	
+	if ($result->num_rows > 0) {
+		throw new Exception("Denne e-postadressen er allerede registrert.");
+	}
+	
+	// Hash password with Argon2
+	$hashed_password = password_hash($passord, PASSWORD_ARGON2ID, [
+		'memory_cost' => 65536,
+		'time_cost' => 4,
+		'threads' => 3
+	]);
+	
+	// Insert new student
+	$stmt = $conn->prepare("INSERT INTO studenter (fornavn, etternavn, epost, passord) VALUES (?, ?, ?, ?)");
+	if (!$stmt) {
+		throw new Exception("Database query failed: " . $conn->error);
+	}
+	
+	$stmt->bind_param("ssss", $fornavn, $etternavn, $epost, $hashed_password);
+	
+	if (!$stmt->execute()) {
+		throw new Exception("Kunne ikke registrere student: " . $stmt->error);
+	}
+	
+	// Close database connections
+	$stmt->close();
+	$conn->close();
+	
+	// Set success message and redirect
+	$_SESSION['success_message'] = "Registrering vellykket! Du kan nå logge inn.";
+	header("Location: ../pages/student_login.php");
+	exit();
+	
 } catch (Exception $e) {
-	// Log error and show user-friendly message
 	error_log("Registration error: " . $e->getMessage());
+	
+	// Close database connections if they exist
+	if (isset($stmt)) $stmt->close();
+	if (isset($conn)) $conn->close();
+	
+	// Store form data and error message in session
+	$_SESSION['form_data'] = [
+		'fornavn' => $fornavn ?? '',
+		'etternavn' => $etternavn ?? '',
+		'epost' => $epost ?? ''
+	];
 	$_SESSION['error_message'] = $e->getMessage();
-	header("Location: ../pages/registrer_student.php?error=1");
+	
+	// Redirect back to registration form
+	header("Location: ../pages/registrer_student.php");
 	exit();
 }
 ?>

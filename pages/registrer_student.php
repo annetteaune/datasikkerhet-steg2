@@ -44,18 +44,28 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="email">E-post</label>
-                    <input class="form-input" type="email" id="email" name="email" required placeholder="din@epost.no">
+                    <label class="form-label" for="epost">E-post</label>
+                    <input class="form-input" type="email" id="epost" name="epost" required placeholder="din@epost.no">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="passord">Passord</label>
-                    <input class="form-input" type="password" id="passord" name="passord" required placeholder="Velg et sterkt passord">
+                    <input class="form-input" type="password" id="passord" name="passord" required 
+                           pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+                           title="Passordet må være minst 8 tegn langt og inneholde minst én stor bokstav, ett tall og ett spesialtegn">
+                    <div class="password-requirements">
+                        <ul>
+                            <li id="length-check">Minst 8 tegn</li>
+                            <li id="uppercase-check">Minst én stor bokstav</li>
+                            <li id="number-check">Minst ett tall</li>
+                            <li id="special-check">Minst ett spesialtegn</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="bekreft_passord">Bekreft passord</label>
-                    <input class="form-input" type="password" id="bekreft_passord" name="bekreft_passord" required placeholder="Gjenta passord">
+                    <input class="form-input" type="password" id="bekreft_passord" name="bekreft_passord" required>
                 </div>
 
                 <button type="submit" class="form-submit">Registrer deg</button>
@@ -74,5 +84,66 @@
             <p>&copy; 2024 HearMeOut. Alle rettigheter reservert.</p>
         </div>
     </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('passord');
+        const confirmPasswordInput = document.getElementById('bekreft_passord');
+        
+        // Password validation checks
+        const checks = {
+            length: {
+                regex: /.{8,}/,
+                element: document.getElementById('length-check')
+            },
+            uppercase: {
+                regex: /[A-Z]/,
+                element: document.getElementById('uppercase-check')
+            },
+            number: {
+                regex: /[0-9]/,
+                element: document.getElementById('number-check')
+            },
+            special: {
+                regex: /[^A-Za-z0-9]/,
+                element: document.getElementById('special-check')
+            }
+        };
+        
+        function validatePassword(password) {
+            for (const [key, check] of Object.entries(checks)) {
+                if (check.regex.test(password)) {
+                    check.element.classList.add('valid');
+                    check.element.classList.remove('invalid');
+                } else {
+                    check.element.classList.add('invalid');
+                    check.element.classList.remove('valid');
+                }
+            }
+        }
+        
+        // Real-time password validation
+        passwordInput.addEventListener('input', function() {
+            validatePassword(this.value);
+        });
+        
+        // Password confirmation check
+        confirmPasswordInput.addEventListener('input', function() {
+            if (this.value !== passwordInput.value) {
+                this.setCustomValidity('Passordene stemmer ikke overens');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Show error message if exists
+        <?php if (isset($_SESSION['error_message'])): ?>
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = '<?php echo htmlspecialchars($_SESSION['error_message']); ?>';
+            document.querySelector('.form-container').insertBefore(errorDiv, document.querySelector('.form-group'));
+        <?php endif; ?>
+    });
+    </script>
 </body>
 </html>

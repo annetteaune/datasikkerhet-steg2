@@ -518,3 +518,67 @@ footer {
   width: 100%;
   max-width: 400px;
 }
+
+/* styling for registerering */
+.file-upload-container {
+  border: 2px dashed var(--border-color);
+  padding: 20px;
+  text-align: center;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  background-color: var(--background-color);
+  transition: border-color 0.3s ease;
+}
+
+.file-upload-container:hover {
+  border-color: var(--primary-color);
+}
+
+.file-upload-container input[type="file"] {
+  display: none;
+}
+
+.file-upload-label {
+  cursor: pointer;
+  display: block;
+  padding: 10px;
+}
+
+.file-upload-button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.file-name-display {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+.password-requirements {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.password-requirements ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.password-requirements li {
+  margin-bottom: 5px;
+}
+
+.password-requirements li.valid {
+  color: var(--success-color);
+}
+
+.password-requirements li.invalid {
+  color: var(--error-color);
+}

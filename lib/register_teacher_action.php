@@ -9,190 +9,194 @@ session_start();
 require 'db.php';
 
 try {
-	// Validate form data
-	$fname = trim($_POST['fname'] ?? '');
-	$lname = trim($_POST['lname'] ?? '');
-	$email = trim($_POST['email'] ?? '');
-	$password = trim($_POST['password'] ?? '');
-	$confirm_password = trim($_POST['confirm_password'] ?? '');
-	$subject_name = trim($_POST['subject'] ?? '');
-	$subject_pin = trim($_POST['pin'] ?? '');
-	$img = $_FILES['profile_picture'] ?? null;
-
-	$errors = [];
-
-	// Validate required fields
-	if (empty($fname) || empty($lname) || empty($email) || empty($password) || 
-		empty($confirm_password) || empty($subject_name) || empty($subject_pin)) {
-		$errors[] = "Alle felt må fylles ut.";
+	// Debug: Log POST data
+	error_log("POST data received: " . print_r($_POST, true));
+	
+	// Get and validate input
+	$fornavn = trim($_POST['fornavn'] ?? '');
+	$etternavn = trim($_POST['etternavn'] ?? '');
+	$epost = trim($_POST['epost'] ?? '');
+	$passord = $_POST['passord'] ?? '';
+	$bekreft_passord = $_POST['bekreft_passord'] ?? '';
+	$emne_navn = trim($_POST['emne_navn'] ?? '');
+	$emne_kode = trim($_POST['emne_kode'] ?? '');
+	$pin_kode = trim($_POST['pin_kode'] ?? '');
+	
+	// Debug: Log processed input
+	error_log("Processed input: fornavn='$fornavn', etternavn='$etternavn', epost='$epost', emne_navn='$emne_navn', emne_kode='$emne_kode', pin_kode='$pin_kode'");
+	
+	// Basic validation
+	if (empty($fornavn) || empty($etternavn) || empty($epost) || empty($passord) || 
+		empty($bekreft_passord) || empty($emne_navn) || empty($emne_kode) || empty($pin_kode)) {
+		$missing_fields = [];
+		if (empty($fornavn)) $missing_fields[] = 'fornavn';
+		if (empty($etternavn)) $missing_fields[] = 'etternavn';
+		if (empty($epost)) $missing_fields[] = 'epost';
+		if (empty($passord)) $missing_fields[] = 'passord';
+		if (empty($bekreft_passord)) $missing_fields[] = 'bekreft_passord';
+		if (empty($emne_navn)) $missing_fields[] = 'emne_navn';
+		if (empty($emne_kode)) $missing_fields[] = 'emne_kode';
+		if (empty($pin_kode)) $missing_fields[] = 'pin_kode';
+		
+		error_log("Missing fields: " . implode(', ', $missing_fields));
+		throw new Exception("Vennligst fyll ut alle felt.");
 	}
-
-	// Validate PIN format
-	if (!preg_match('/^[0-9]{4}$/', $subject_pin)) {
-		$errors[] = "PIN-koden må bestå av 4 siffer.";
-	}
-
-	// Validate password match
-	if ($password !== $confirm_password) {
-		$errors[] = "Passordene må være like.";
-	}
-
-	// Validate password length and complexity
-	if (strlen($password) < 8) {
-		$errors[] = "Passordet må være minst 8 tegn langt.";
-	}
-
+	
 	// Validate email format
-	if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-		$errors[] = "Ugyldig e-postadresse.";
+	if (!filter_var($epost, FILTER_VALIDATE_EMAIL)) {
+		throw new Exception("Ugyldig e-postadresse.");
 	}
-
-	// Validate and process image
-	$serverFilePath = null;
-	if ($img && $img['error'] === UPLOAD_ERR_OK) {
-		$imgTmpPath = $img['tmp_name'];
-		$imgMimeType = mime_content_type($imgTmpPath);
-		$validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-
-		if (!in_array($imgMimeType, $validTypes)) {
-			$errors[] = "Ugyldig filtype. Kun JPEG, PNG og GIF er tillatt.";
-		} else {
-			// Process image
-			$imgDir = '../img/';
-			
-			// Ensure the directory exists and is writable
-			if (!is_dir($imgDir)) {
-				mkdir($imgDir, 0777, true);
-			}
-			
-			if (!is_writable($imgDir)) {
-				error_log("Image directory is not writable: " . $imgDir);
-				throw new Exception("Kunne ikke laste opp bildet. Kontakt administrator.");
-			}
-
-			$uniqName = uniqid() . '-' . basename($img['name']);
-			$serverFilePath = $imgDir . $uniqName;
-
-			if (!move_uploaded_file($imgTmpPath, $serverFilePath)) {
-				error_log("Failed to move uploaded file from {$imgTmpPath} to {$serverFilePath}");
-				$errors[] = "Kunne ikke laste opp bildet. Vennligst prøv igjen.";
-			}
+	
+	// Validate password strength
+	$password_validation = validate_password($passord);
+	if (!$password_validation['valid']) {
+		throw new Exception($password_validation['message']);
+	}
+	
+	// Check if passwords match
+	if ($passord !== $bekreft_passord) {
+		throw new Exception("Passordene stemmer ikke overens.");
+	}
+	
+	// Validate PIN code
+	if (!preg_match('/^[0-9]{4}$/', $pin_kode)) {
+		throw new Exception("PIN-koden må være 4 siffer.");
+	}
+	
+	// Handle file upload if provided
+	$bilde_path = null;
+	if (isset($_FILES['bilde']) && $_FILES['bilde']['error'] === UPLOAD_ERR_OK) {
+		$allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+		$file_type = $_FILES['bilde']['type'];
+		
+		if (!in_array($file_type, $allowed_types)) {
+			throw new Exception("Ugyldig filtype. Kun JPG, PNG og GIF er tillatt.");
 		}
-	} else {
-		$uploadError = $img ? $img['error'] : 'No file uploaded';
-		error_log("Image upload error: " . $uploadError);
-		$errors[] = "Profilbilde er påkrevd.";
+		
+		$unique_filename = uniqid() . '-' . basename($_FILES['bilde']['name']);
+		$upload_path = '../img/' . $unique_filename;
+		
+		if (!move_uploaded_file($_FILES['bilde']['tmp_name'], $upload_path)) {
+			throw new Exception("Kunne ikke laste opp bildet.");
+		}
+		
+		$bilde_path = $unique_filename;
 	}
-
-	// If there are validation errors, redirect back with error messages
-	if (!empty($errors)) {
-		$_SESSION['error_messages'] = $errors;
-		header("Location: ../pages/registrer_foreleser.php?error=1");
-		exit();
-	}
-
-	// Get database connection with guest role (since non-logged in users are guests)
+	
+	// Get database connection
 	$conn = get_db_connection('guest');
-
-	// Check if PIN already exists
-	$check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM emner WHERE pin_kode = ?");
-	if (!$check_stmt) {
-		throw new Exception("Database query failed: " . $conn->error);
-	}
-
-	$check_stmt->bind_param("s", $subject_pin);
-	$check_stmt->execute();
-	$check_result = $check_stmt->get_result();
-	$pin_count = $check_result->fetch_assoc()['count'];
-	$check_stmt->close();
-
-	if ($pin_count > 0) {
-		throw new Exception("PIN-koden er allerede i bruk. Vennligst velg en annen PIN-kode.");
-	}
-
-	// Hash the password
-	$hashed_password = password_hash($password, PASSWORD_ARGON2ID, [
-		'memory_cost' => 65536,  // 64MB
-		'time_cost' => 4,        // 4 iterations
-		'threads' => 3           // 3 threads
-	]);
-
-	// Generate course code
-	$prefix = strtoupper(substr($subject_name, 0, 4));
-	$characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	$randomLetters = '';
-	for ($i = 0; $i < 4; $i++) {
-		$randomLetters .= $characters[rand(0, strlen($characters) - 1)];
-	}
-	$currentYear = date('Y');
-	$subject_code = $prefix . $randomLetters . $currentYear;
-
-	// Start transaction
 	$conn->begin_transaction();
-
+	
 	try {
-		// Call the register_lecturer_with_course stored procedure
-		$stmt = $conn->prepare("CALL register_lecturer_with_course(?, ?, ?, ?, ?, ?, ?, ?)");
+		// Check if email already exists
+		$stmt = $conn->prepare("SELECT epost FROM foreleser WHERE epost = ?");
 		if (!$stmt) {
 			throw new Exception("Database query failed: " . $conn->error);
 		}
-
-		$stmt->bind_param("ssssssss", 
-			$fname, 
-			$lname, 
-			$email, 
-			$hashed_password, 
-			$serverFilePath,
-			$subject_name,
-			$subject_code,
-			$subject_pin
-		);
 		
+		$stmt->bind_param("s", $epost);
 		$stmt->execute();
+		$result = $stmt->get_result();
 		
-		// Store the result to prevent "Commands out of sync" error
-		do {
-			if ($result = $stmt->get_result()) {
-				$response = $result->fetch_assoc();
-				$result->free();
-			}
-		} while ($stmt->more_results() && $stmt->next_result());
-
-		if (!isset($response) || !$response) {
-			throw new Exception("Failed to get result from registration procedure");
+		if ($result->num_rows > 0) {
+			throw new Exception("Denne e-postadressen er allerede registrert.");
 		}
-
-		if ($response['result'] === 'SUCCESS') {
-			// Commit transaction
-			$conn->commit();
-			
-			// Close resources
-			$stmt->close();
-			close_db_connection($conn);
-
-			// Set success message and redirect
-			$_SESSION['success_message'] = "Registrering vellykket! Du kan nå logge inn.";
-			header("Location: ../pages/login.php?registration=success");
-			exit();
-		} else {
-			throw new Exception($response['message'] ?? "En feil oppstod under registrering.");
+		
+		// Check if emne_kode already exists
+		$stmt = $conn->prepare("SELECT emne_kode FROM emner WHERE emne_kode = ?");
+		$stmt->bind_param("s", $emne_kode);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		
+		if ($result->num_rows > 0) {
+			throw new Exception("Denne emnekoden er allerede i bruk.");
 		}
+		
+		// Hash password with Argon2
+		$hashed_password = password_hash($passord, PASSWORD_ARGON2ID, [
+			'memory_cost' => 65536,
+			'time_cost' => 4,
+			'threads' => 3
+		]);
+		
+		// Insert new lecturer
+		$stmt = $conn->prepare("INSERT INTO foreleser (fornavn, etternavn, epost, passord, bilde) VALUES (?, ?, ?, ?, ?)");
+		if (!$stmt) {
+			throw new Exception("Database query failed: " . $conn->error);
+		}
+		
+		$stmt->bind_param("sssss", $fornavn, $etternavn, $epost, $hashed_password, $bilde_path);
+		
+		if (!$stmt->execute()) {
+			throw new Exception("Kunne ikke registrere foreleser: " . $stmt->error);
+		}
+		
+		$foreleser_id = $conn->insert_id;
+		
+		// Insert new course
+		$stmt = $conn->prepare("INSERT INTO emner (emne_navn, emne_kode, pin_kode) VALUES (?, ?, ?)");
+		if (!$stmt) {
+			throw new Exception("Database query failed: " . $conn->error);
+		}
+		
+		$stmt->bind_param("sss", $emne_navn, $emne_kode, $pin_kode);
+		
+		if (!$stmt->execute()) {
+			throw new Exception("Kunne ikke registrere emne: " . $stmt->error);
+		}
+		
+		$emne_id = $conn->insert_id;
+		
+		// Create relationship between lecturer and course
+		$stmt = $conn->prepare("INSERT INTO foreleser_emner (foreleser_id, emne_id) VALUES (?, ?)");
+		if (!$stmt) {
+			throw new Exception("Database query failed: " . $conn->error);
+		}
+		
+		$stmt->bind_param("ii", $foreleser_id, $emne_id);
+		
+		if (!$stmt->execute()) {
+			throw new Exception("Kunne ikke knytte foreleser til emne: " . $stmt->error);
+		}
+		
+		// Commit transaction
+		$conn->commit();
+		
+		// Close database connections
+		$stmt->close();
+		$conn->close();
+		
+		// Set success message and redirect
+		$_SESSION['success_message'] = "Registrering vellykket! Du kan nå logge inn.";
+		header("Location: ../pages/foreleser_login.php");
+		exit();
+		
 	} catch (Exception $e) {
-		// Rollback transaction
+		// Rollback transaction on error
 		$conn->rollback();
 		throw $e;
 	}
-
+	
 } catch (Exception $e) {
-	// If there was an error and an image was uploaded, delete it
-	if (isset($serverFilePath) && file_exists($serverFilePath)) {
-		unlink($serverFilePath);
-	}
-
-	// Log error and show user-friendly message
 	error_log("Registration error: " . $e->getMessage());
+	
+	// Close database connections if they exist
+	if (isset($stmt)) $stmt->close();
+	if (isset($conn)) $conn->close();
+	
+	// Store form data and error message in session
+	$_SESSION['form_data'] = [
+		'fornavn' => $fornavn ?? '',
+		'etternavn' => $etternavn ?? '',
+		'epost' => $epost ?? '',
+		'emne_navn' => $emne_navn ?? '',
+		'emne_kode' => $emne_kode ?? '',
+		'pin_kode' => $pin_kode ?? ''
+	];
 	$_SESSION['error_message'] = $e->getMessage();
-	header("Location: ../pages/registrer_foreleser.php?error=1");
+	
+	// Redirect back to registration form
+	header("Location: ../pages/registrer_foreleser.php");
 	exit();
 }
 ?>

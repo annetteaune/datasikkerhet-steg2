@@ -5,46 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrer som foreleser - HearMeOut</title>
     <link rel="stylesheet" href="../styling.css">
-    <style>
-        .file-upload-container {
-            border: 2px dashed var(--border-color);
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            background-color: var(--background-color);
-            transition: border-color 0.3s ease;
-        }
-
-        .file-upload-container:hover {
-            border-color: var(--primary-color);
-        }
-
-        .file-upload-container input[type="file"] {
-            display: none;
-        }
-
-        .file-upload-label {
-            cursor: pointer;
-            display: block;
-            padding: 10px;
-        }
-
-        .file-upload-button {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-
-        .file-name-display {
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: var(--text-color);
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -87,70 +47,71 @@
                 <?php endif; ?>
 
                 <div class="form-group">
-                    <label class="form-label" for="fname">Fornavn</label>
-                    <input class="form-input" type="text" id="fname" name="fname" required placeholder="Skriv inn fornavn">
+                    <label class="form-label" for="fornavn">Fornavn</label>
+                    <input class="form-input" type="text" id="fornavn" name="fornavn" required placeholder="Skriv inn fornavn">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="lname">Etternavn</label>
-                    <input class="form-input" type="text" id="lname" name="lname" required placeholder="Skriv inn etternavn">
+                    <label class="form-label" for="etternavn">Etternavn</label>
+                    <input class="form-input" type="text" id="etternavn" name="etternavn" required placeholder="Skriv inn etternavn">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="email">E-post</label>
-                    <input class="form-input" type="email" id="email" name="email" required placeholder="din@epost.no">
+                    <label class="form-label" for="epost">E-post</label>
+                    <input class="form-input" type="email" id="epost" name="epost" required placeholder="din@epost.no">
                     <?php if (isset($_GET['error_email_already_in_use'])): ?>
                         <div class="form-error"><?php echo htmlspecialchars($_GET['error_email_already_in_use']); ?></div>
                     <?php endif; ?>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="password">Passord</label>
-                    <input class="form-input" type="password" id="password" name="password" required placeholder="Velg et sterkt passord">
+                    <label class="form-label" for="passord">Passord</label>
+                    <input class="form-input" type="password" id="passord" name="passord" required 
+                           pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+                           title="Passordet må være minst 8 tegn langt og inneholde minst én stor bokstav, ett tall og ett spesialtegn">
+                    <div class="password-requirements">
+                        <ul>
+                            <li id="length-check">Minst 8 tegn</li>
+                            <li id="uppercase-check">Minst én stor bokstav</li>
+                            <li id="number-check">Minst ett tall</li>
+                            <li id="special-check">Minst ett spesialtegn</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="confirm_password">Bekreft passord</label>
-                    <input class="form-input" type="password" id="confirm_password" name="confirm_password" required placeholder="Gjenta passord">
-                    <?php if (isset($_GET['error_confirm_password'])): ?>
-                        <div class="form-error"><?php echo htmlspecialchars($_GET['error_confirm_password']); ?></div>
-                    <?php endif; ?>
+                    <label class="form-label" for="bekreft_passord">Bekreft passord</label>
+                    <input class="form-input" type="password" id="bekreft_passord" name="bekreft_passord" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Profilbilde</label>
-                    <div class="file-upload-container">
-                        <label class="file-upload-label" for="profile_picture">
-                            <div class="file-upload-button">Velg profilbilde</div>
-                            <input type="file" id="profile_picture" name="profile_picture" accept="image/*" required onchange="updateFileName(this)">
-                            <div id="file-name-display" class="file-name-display">Ingen fil valgt</div>
-                        </label>
-                    </div>
-                    <p class="form-help-text">Profilbilde bør være i 1:1 format for best resultat</p>
+                    <label class="form-label" for="emne_navn">Emnenavn</label>
+                    <input class="form-input" type="text" id="emne_navn" name="emne_navn" required placeholder="Skriv inn emnenavn">
                 </div>
 
-                <div class="form-section">
-                    <h2>Emne informasjon</h2>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="subject">Navn på emnet</label>
-                        <input class="form-input" type="text" id="subject" name="subject" required placeholder="F.eks. Programmering 101">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="pin">PIN-kode for emnet</label>
-                        <input class="form-input" type="text" id="pin" name="pin" required placeholder="Velg en 4-sifret PIN-kode">
-                        <?php if (isset($_GET['error_pin_already_in_use'])): ?>
-                            <div class="form-error"><?php echo htmlspecialchars($_GET['error_pin_already_in_use']); ?></div>
-                        <?php endif; ?>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label" for="emne_kode">Emnekode</label>
+                    <input class="form-input" type="text" id="emne_kode" name="emne_kode" required placeholder="F.eks. DAT100">
                 </div>
 
-                <button type="submit" class="form-submit">Registrer</button>
+                <div class="form-group">
+                    <label class="form-label" for="pin_kode">PIN-kode (4 siffer)</label>
+                    <input class="form-input" type="text" id="pin_kode" name="pin_kode" required 
+                           pattern="[0-9]{4}" maxlength="4" placeholder="Fire siffer">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="bilde">Profilbilde (valgfritt)</label>
+                    <input class="form-input" type="file" id="bilde" name="bilde" accept="image/*">
+                </div>
+
+                <button type="submit" class="form-submit">Registrer deg</button>
             </form>
 
-            <div class="form-footer">
-                <p>Har du allerede en bruker? <a href="foreleser_login.php">Logg inn her</a></p>
+            <div class="form-divider">eller</div>
+
+            <div class="form-links">
+                <p>Har du allerede en konto? <a href="foreleser_login.php">Logg inn her</a></p>
             </div>
         </div>
     </main>
@@ -162,14 +123,75 @@
     </footer>
 
     <script>
-        function updateFileName(input) {
-            const fileNameDisplay = document.getElementById('file-name-display');
-            if (input.files && input.files[0]) {
-                fileNameDisplay.textContent = input.files[0].name;
-            } else {
-                fileNameDisplay.textContent = 'Ingen fil valgt';
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('passord');
+            const confirmPasswordInput = document.getElementById('bekreft_passord');
+            
+            // Password validation checks
+            const checks = {
+                length: {
+                    regex: /.{8,}/,
+                    element: document.getElementById('length-check')
+                },
+                uppercase: {
+                    regex: /[A-Z]/,
+                    element: document.getElementById('uppercase-check')
+                },
+                number: {
+                    regex: /[0-9]/,
+                    element: document.getElementById('number-check')
+                },
+                special: {
+                    regex: /[^A-Za-z0-9]/,
+                    element: document.getElementById('special-check')
+                }
+            };
+            
+            function validatePassword(password) {
+                for (const [key, check] of Object.entries(checks)) {
+                    if (check.regex.test(password)) {
+                        check.element.classList.add('valid');
+                        check.element.classList.remove('invalid');
+                    } else {
+                        check.element.classList.add('invalid');
+                        check.element.classList.remove('valid');
+                    }
+                }
             }
-        }
+            
+            // Real-time password validation
+            passwordInput.addEventListener('input', function() {
+                validatePassword(this.value);
+            });
+            
+            // Password confirmation check
+            confirmPasswordInput.addEventListener('input', function() {
+                if (this.value !== passwordInput.value) {
+                    this.setCustomValidity('Passordene stemmer ikke overens');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+            
+            // PIN code validation
+            const pinInput = document.getElementById('pin_kode');
+            pinInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+                if (this.value.length === 4) {
+                    this.setCustomValidity('');
+                } else {
+                    this.setCustomValidity('PIN-koden må være 4 siffer');
+                }
+            });
+            
+            // Show error message if exists
+            <?php if (isset($_SESSION['error_message'])): ?>
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = '<?php echo htmlspecialchars($_SESSION['error_message']); ?>';
+                document.querySelector('.form-container').insertBefore(errorDiv, document.querySelector('.form-group'));
+            <?php endif; ?>
+        });
     </script>
 </body>
 </html>

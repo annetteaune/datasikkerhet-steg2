@@ -270,3 +270,82 @@ button:hover {
   text-align: center;
   font-weight: bold;
 }
+
+/* Password validation styles */
+.password-requirements {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+}
+
+.password-requirements ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.password-requirements li {
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.password-requirements li::before {
+  content: "•";
+  color: #94a3b8;
+}
+
+.password-requirements li.valid::before {
+  content: "✓";
+  color: var(--success-color);
+}
+
+.password-requirements li.invalid::before {
+  content: "✗";
+  color: var(--error-color);
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  background-color: var(--text-color);
+  color: white;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Error message styles */
+.error-message {
+  background-color: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+  font-size: 0.875rem;
+}
