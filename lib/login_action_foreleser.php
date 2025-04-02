@@ -12,77 +12,63 @@ require 'db.php';
 // Check if the form was submitted via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
-        // Retrieve and trim form data
-        $email = trim($_POST['email']);
-        $password = trim($_POST['password']);
-
-        // Simple validation: make sure fields are not empty
-        if (empty($email) || empty($password)) {
-            throw new Exception("Vennligst fyll ut både e-post og passord.");
-        }
-
-        // Get database connection with lecturer role
-        $conn = get_db_connection('lecturer');
-        error_log("Database connection established");
-
-        // Hent brukerinformasjon og passord
-        $stmt = $conn->prepare("SELECT foreleser_id, fornavn, etternavn, epost, passord FROM foreleser WHERE epost = ?");
-        if (!$stmt) {
-            error_log("Failed to prepare statement: " . $conn->error);
-            throw new Exception("Feil ved forberedelse av login");
-        }
-
-        $stmt->bind_param("s", $email);
-        if (!$stmt->execute()) {
-            error_log("Failed to execute statement: " . $stmt->error);
-            throw new Exception("Feil ved utførelse av login");
-        }
-
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
+        // Get and validate input
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
         
-        // Free the result and close the statement
-        $result->free();
-        $stmt->close();
-
-        if (!$user) {
-            error_log("No user found for email: " . $email);
+        if (empty($email) || empty($password)) {
+            throw new Exception("Vennligst fyll ut alle felt.");
+        }
+        
+        // Get database connection with guest role
+        $conn = get_db_connection('guest');
+        
+        // Call the login_lecturer stored procedure
+        $stmt = $conn->prepare("CALL login_lecturer(?)");
+        if (!$stmt) {
+            throw new Exception("Database query failed: " . $conn->error);
+        }
+        
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
             throw new Exception("Ugyldig e-post eller passord.");
         }
-
-        // Verifiser nåværende passord
+        
+        $user = $result->fetch_assoc();
+        
+        // Verify password using Argon2
         if (!password_verify($password, $user['passord'])) {
-            error_log("Current password verification failed");
-            $_SESSION['error_message'] = "Brukernavn eller passord er feil.";
-            header("Location: ../pages/foreleser_login.php?error=1");
-            exit();
+            throw new Exception("Ugyldig e-post eller passord.");
         }
-
-        // Login successful, set session variables
-        $_SESSION['foreleser_id'] = $user['foreleser_id'];
+        
+        // Set session variables with names matching dashboard expectations
+        $_SESSION['foreleser_id'] = $user['bruker_id'];
         $_SESSION['foreleser_fname'] = $user['fornavn'];
         $_SESSION['foreleser_lname'] = $user['etternavn'];
         $_SESSION['foreleser_email'] = $user['epost'];
-        $_SESSION['user_type'] = 'lecturer';
-
-        // Close database connection
-        close_db_connection($conn);
-
+        $_SESSION['user_type'] = $user['user_type'];
+        
+        // Close database connections
+        $stmt->close();
+        $conn->close();
+        
         // Redirect to dashboard
         header("Location: dashboard_foreleser.php");
         exit();
         
     } catch (Exception $e) {
-        // Log error and show user-friendly message
         error_log("Login error: " . $e->getMessage());
+        
+        // Close database connections if they exist
+        if (isset($stmt)) $stmt->close();
+        if (isset($conn)) $conn->close();
+        
+        // Redirect back with error message
         $_SESSION['error_message'] = $e->getMessage();
-        
-        // Close database connection if it exists
-        if (isset($conn)) {
-            close_db_connection($conn);
-        }
-        
-        header("Location: ../pages/foreleser_login.php?error=1");
+        header("Location: ../pages/foreleser_login.php");
         exit();
     }
 } else {
