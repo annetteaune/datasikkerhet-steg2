@@ -1,9 +1,28 @@
 <?php
 /**
- * Setter sikkerhetsrelaterte HTTP-headers for applikasjonen
- * Disse headersene hjelper mot ulike web-sikkerhetsproblemer
+ * Security Headers Configuration
+ *
+ * This file contains functions for setting security-related HTTP headers
+ * that help protect against various web vulnerabilities.
+ *
+ * PHP version 8.0
+ *
+ * @category   Security
+ * @package    CleanSteg1
+ * @subpackage Security
+ * @author     Your Name <your.email@example.com>
+ * @license    MIT License
+ * @link       https://github.com/yourusername/cleanSteg1
  */
-function setSecurityHeaders() {
+
+/**
+ * Sets security-related HTTP headers for the application
+ * These headers help protect against various web vulnerabilities
+ *
+ * @return void
+ */
+function setSecurityHeaders()
+{
     // Forhindre clickjacking
     header('X-Frame-Options: DENY');
     
@@ -14,7 +33,11 @@ function setSecurityHeaders() {
     header('X-Content-Type-Options: nosniff');
     
     // Kontroller resurslast
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';");
+    header(
+        "Content-Security-Policy: default-src 'self'; " .
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " .
+        "style-src 'self' 'unsafe-inline';"
+    );
     
     // Tving HTTPS
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
@@ -28,10 +51,14 @@ function setSecurityHeaders() {
 }
 
 /**
- * Setter CORS-headers for API-sluttpunkter
+ * Sets CORS headers for API endpoints
+ *
  * @param bool $allowAllOrigins Om å tillate alle ruter (*) eller bare spesifikke
+ *
+ * @return void
  */
-function setCORSHeaders($allowAllOrigins = false) {
+function setCORSHeaders($allowAllOrigins = false)
+{
     if ($allowAllOrigins) {
         header('Access-Control-Allow-Origin: *');
     } else {
