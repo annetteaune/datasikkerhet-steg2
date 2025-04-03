@@ -3,25 +3,25 @@ session_start();
 require 'db.php';
 
 try {
-    // Ensure the lecturer is logged in
+    // Sørge for at foreleseren er logget inn
     if (!isset($_SESSION['foreleser_id'])) {
         throw new Exception("Du må være logget inn for å svare på meldinger.");
     }
 
-    // Get form data
+    // Hent formdata
     $foreleser_id = $_SESSION['foreleser_id'];
     $melding_id = $_POST['melding_id'] ?? null;
     $innhold = trim($_POST['innhold'] ?? '');
 
-    // Validate input fields
+    // Valider inputfelt
     if (empty($foreleser_id) || empty($innhold) || empty($melding_id)) {
         throw new Exception("Alle felt må fylles ut.");
     }
 
-    // Get database connection with lecturer role
+    // Hent databaseforbindelse med foreleser-rolle
     $conn = get_db_connection('lecturer');
 
-    // Call the send_response stored procedure
+    // Kall send_response-prosedyren
     $stmt = $conn->prepare("CALL send_response(?, ?, ?)");
     if (!$stmt) {
         throw new Exception("Database query failed: " . $conn->error);
@@ -38,11 +38,11 @@ try {
     $response = $result->fetch_assoc();
 
     if ($response['result'] === 'SUCCESS') {
-        // Close resources
+        // Steng ressurser
         $stmt->close();
         close_db_connection($conn);
 
-        // Set success message and redirect
+        // Sett success-melding og omdiriger
         $_SESSION['success_message'] = "Svar er sendt til student";
         header("Location: dashboard_foreleser.php?message=success");
         exit();
@@ -51,8 +51,8 @@ try {
     }
 
 } catch (Exception $e) {
-    // Log error and show user-friendly message
-    error_log("Response sending error: " . $e->getMessage());
+    // Logg error og vis brukervennlig melding
+    error_log("Svar sending feil: " . $e->getMessage());
     $_SESSION['error_message'] = $e->getMessage();
     header("Location: dashboard_foreleser.php?error=1");
     exit();

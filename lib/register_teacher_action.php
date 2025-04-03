@@ -1,25 +1,25 @@
 <?php
-// Enable error reporting for debugging (remove in production)
+// Aktiver feilrapportering for debugging (fjern i produksjon)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Configure secure session parameters before starting the session
+// Konfigurer sikre session-parametre før session start
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_samesite', 'Strict');
 
-// Start the session
+// Start session
 session_start();
 
 require 'db.php';
 require_once 'registration_attempts.php';
 
 try {
-	// Get client IP
+	// Hent klientens IP-adresse
 	$ip = $_SERVER['REMOTE_ADDR'];
 	
-	// Check registration rate limit
+	// Sjekk registreringsrate-begrensning
 	$limit_check = check_registration_limit($ip);
 	if ($limit_check['limited']) {
 		$remaining_minutes = ceil($limit_check['remaining_time'] / 60);
@@ -29,7 +29,7 @@ try {
 	// Debug: Log POST data
 	error_log("POST data received: " . print_r($_POST, true));
 	
-	// Get and validate input
+	// Hent og valider input
 	$fornavn = trim($_POST['fornavn'] ?? '');
 	$etternavn = trim($_POST['etternavn'] ?? '');
 	$epost = trim($_POST['epost'] ?? '');
@@ -39,10 +39,10 @@ try {
 	$emne_kode = trim($_POST['emne_kode'] ?? '');
 	$pin_kode = trim($_POST['pin_kode'] ?? '');
 	
-	// Debug: Log processed input
-	error_log("Processed input: fornavn='$fornavn', etternavn='$etternavn', epost='$epost', emne_navn='$emne_navn', emne_kode='$emne_kode', pin_kode='$pin_kode'");
+	// Debug: Logg prosesserte input
+	error_log("Prosesserte input: fornavn='$fornavn', etternavn='$etternavn', epost='$epost', emne_navn='$emne_navn', emne_kode='$emne_kode', pin_kode='$pin_kode'");
 	
-	// Basic validation
+	// Grunnleggende validering
 	if (empty($fornavn) || empty($etternavn) || empty($epost) || empty($passord) || 
 		empty($bekreft_passord) || empty($emne_navn) || empty($emne_kode) || empty($pin_kode)) {
 		$missing_fields = [];
@@ -59,28 +59,28 @@ try {
 		throw new Exception("Vennligst fyll ut alle felt.");
 	}
 	
-	// Validate email format
+	// Valider e-postformat
 	if (!filter_var($epost, FILTER_VALIDATE_EMAIL)) {
 		throw new Exception("Ugyldig e-postadresse.");
 	}
 	
-	// Validate password strength
+	// Valider passordstyrke
 	$password_validation = validate_password($passord);
 	if (!$password_validation['valid']) {
 		throw new Exception($password_validation['message']);
 	}
 	
-	// Check if passwords match
+	// Sjekk om passordene stemmer
 	if ($passord !== $bekreft_passord) {
 		throw new Exception("Passordene stemmer ikke overens.");
 	}
 	
-	// Validate PIN code
+	// Valider PIN-kode
 	if (!preg_match('/^[0-9]{4}$/', $pin_kode)) {
 		throw new Exception("PIN-koden må være 4 siffer.");
 	}
 	
-	// Handle file upload if provided
+	// Håndter filopplasting hvis den er gitt
 	$bilde_path = null;
 	if (isset($_FILES['bilde']) && $_FILES['bilde']['error'] === UPLOAD_ERR_OK) {
 		$allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
@@ -100,12 +100,12 @@ try {
 		$bilde_path = $unique_filename;
 	}
 	
-	// Get database connection
+	// Hent databaseforbindelse
 	$conn = get_db_connection('guest');
 	$conn->begin_transaction();
 	
 	try {
-		// Check if email already exists
+		// Sjekk om e-post allerede eksisterer
 		$stmt = $conn->prepare("SELECT foreleser_id FROM foreleser WHERE epost = ?");
 		if (!$stmt) {
 			throw new Exception("Database query failed: " . $conn->error);
@@ -119,7 +119,7 @@ try {
 			throw new Exception("Denne e-postadressen er allerede registrert.");
 		}
 		
-		// Check if emne_kode already exists
+		// Sjekk om emne_kode allerede eksisterer
 		$stmt = $conn->prepare("SELECT emne_kode FROM emner WHERE emne_kode = ?");
 		$stmt->bind_param("s", $emne_kode);
 		$stmt->execute();
@@ -129,14 +129,14 @@ try {
 			throw new Exception("Denne emnekoden er allerede i bruk.");
 		}
 		
-		// Hash password with Argon2
+		// Hash passord med Argon2
 		$hashed_password = password_hash($passord, PASSWORD_ARGON2ID, [
 			'memory_cost' => 65536,
 			'time_cost' => 4,
 			'threads' => 3
 		]);
 		
-		// Insert new lecturer
+		// Sett inn ny foreleser
 		$stmt = $conn->prepare("INSERT INTO foreleser (fornavn, etternavn, epost, passord, bilde) VALUES (?, ?, ?, ?, ?)");
 		if (!$stmt) {
 			throw new Exception("Database query failed: " . $conn->error);
@@ -150,7 +150,7 @@ try {
 		
 		$foreleser_id = $conn->insert_id;
 		
-		// Insert new course
+		// Sett inn nytt emne
 		$stmt = $conn->prepare("INSERT INTO emner (emne_navn, emne_kode, pin_kode) VALUES (?, ?, ?)");
 		if (!$stmt) {
 			throw new Exception("Database query failed: " . $conn->error);
@@ -164,7 +164,7 @@ try {
 		
 		$emne_id = $conn->insert_id;
 		
-		// Create relationship between lecturer and course
+		// Opprett forhold mellom foreleser og emne
 		$stmt = $conn->prepare("INSERT INTO foreleser_emner (foreleser_id, emne_id) VALUES (?, ?)");
 		if (!$stmt) {
 			throw new Exception("Database query failed: " . $conn->error);
@@ -176,20 +176,20 @@ try {
 			throw new Exception("Kunne ikke knytte foreleser til emne: " . $stmt->error);
 		}
 		
-		// Commit transaction
+		// Commit transaksjon
 		$conn->commit();
 		
-		// Close database connections
+		// Lukk databaseforbindelser
 		$stmt->close();
 		$conn->close();
 		
-		// Set success message and redirect
+		// Sett success-melding og omdiriger
 		$_SESSION['success_message'] = "Registrering vellykket! Du kan nå logge inn.";
 		header("Location: ../pages/foreleser_login.php");
 		exit();
 		
 	} catch (Exception $e) {
-		// Rollback transaction on error
+		// Rollback transaksjon ved error
 		$conn->rollback();
 		throw $e;
 	}
@@ -197,11 +197,11 @@ try {
 } catch (Exception $e) {
 	error_log("Registration error: " . $e->getMessage());
 	
-	// Close database connections if they exist
+	// Lukk databaseforbindelser hvis de eksisterer
 	if (isset($stmt)) $stmt->close();
 	if (isset($conn)) $conn->close();
 	
-	// Store form data and error message in session
+	// Lagre formdata og feilmelding i session
 	$_SESSION['form_data'] = [
 		'fornavn' => $fornavn ?? '',
 		'etternavn' => $etternavn ?? '',
@@ -212,7 +212,7 @@ try {
 	];
 	$_SESSION['error_message'] = $e->getMessage();
 	
-	// Redirect back to registration form
+	// Omdiriger tilbake til registreringsform
 	header("Location: ../pages/registrer_foreleser.php");
 	exit();
 }

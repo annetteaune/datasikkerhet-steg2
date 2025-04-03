@@ -42,7 +42,7 @@ try {
         throw new Exception("Passordene er ikke like.");
     }
     
-    // Get database connection with lecturer role
+    // hente db-kobling
     $conn = get_db_connection('lecturer');
     error_log("Database connection established");
 
@@ -97,7 +97,7 @@ try {
     $stmt->close();
     $conn->close();
 
-    // Password change successful
+    // passordbytte suksess
     $_SESSION['pw_message'] = "Passordet ble oppdatert.";
     header("Location: dashboard_foreleser.php");
     exit();

@@ -1,5 +1,5 @@
 <?php
-// Configure secure session parameters before starting the session
+// Konfigurer sikre session-parametre før session start
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure', 1);
 ini_set('session.use_only_cookies', 1);
@@ -62,7 +62,7 @@ try {
     $_SESSION['foreleser_bilde'] = $data['foreleser_bilde'];
     $_SESSION['user_type'] = 'guest';
     
-    // Regenerate session ID to prevent session fixation
+    // Regenerer session ID for å forhindre session-fiksering
     session_regenerate_id(true);
     
     // 6. Lukk databasetilkoblingen

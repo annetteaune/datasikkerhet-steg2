@@ -7,32 +7,32 @@ try {
     error_log("Session data: " . print_r($_SESSION, true));
     error_log("POST data: " . print_r($_POST, true));
 
-    // Ensure the student is logged in
+    // Sørge for at studenten er logget inn
     if (!isset($_SESSION['student_fname'])) {
         throw new Exception("Du må være logget inn for å sende en melding.");
     }
 
-    // Get form data
+    // Hent formdata
     $student_id = $_SESSION['student_id'] ?? null;
     $emne_id = $_POST['emne_id'] ?? null;
     $innhold = trim($_POST['melding'] ?? '');
 
-    // Debug: Log the values we're about to use
+    // Debug
     error_log("Using values - student_id: " . $student_id . ", emne_id: " . $emne_id . ", innhold length: " . strlen($innhold));
 
-    // Validate input fields
+    // Valider inputfelt
     if (empty($student_id)) {
-        throw new Exception("Student not found");
+        throw new Exception("Student ikke funnet");
     }
     
     if (empty($emne_id) || empty($innhold)) {
         throw new Exception("Alle felt må fylles ut.");
     }
 
-    // Get database connection with student role
+    // Hent databaseforbindelse med student-rolle
     $conn = get_db_connection('student');
 
-    // Call the send_message stored procedure
+    // Kall send_message-prosedyren
     $stmt = $conn->prepare("CALL send_message(?, ?, ?)");
     if (!$stmt) {
         throw new Exception("Database query failed: " . $conn->error);
@@ -40,7 +40,7 @@ try {
 
     $stmt->bind_param("iis", $student_id, $emne_id, $innhold);
     
-    // Debug: Log the SQL and parameters
+    // Debug
     error_log("Executing send_message with params - student_id: $student_id, emne_id: $emne_id, innhold: $innhold");
     
     $stmt->execute();
@@ -53,11 +53,11 @@ try {
     $response = $result->fetch_assoc();
 
     if ($response['result'] === 'SUCCESS') {
-        // Close resources
+        // Steng ressurser
         $stmt->close();
         close_db_connection($conn);
 
-        // Set success message and redirect
+        // Sett success-melding og omdiriger
         $_SESSION['success'] = "Melding er sendt til foreleser";
         header("Location: dashboard.php");
         exit();
@@ -66,8 +66,8 @@ try {
     }
 
 } catch (Exception $e) {
-    // Log error and show user-friendly message
-    error_log("Message sending error: " . $e->getMessage());
+    // Logg error og vis brukervennlig melding
+    error_log("Melding sending feil: " . $e->getMessage());
     $_SESSION['error'] = $e->getMessage();
     header("Location: dashboard.php");
     exit();

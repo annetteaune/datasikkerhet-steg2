@@ -1,5 +1,5 @@
 <?php
-// Disable error reporting for notices and warnings in production
+// Deaktiver feilmeldinger for varsler og advarsler i produksjon
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
 
@@ -21,12 +21,12 @@ $method = $_SERVER['REQUEST_METHOD'];
 $endpoint = isset($_GET['endpoint']) ? $_GET['endpoint'] : '';
 $subresource = isset($_GET['subresource']) ? $_GET['subresource'] : '';
 
-// Configure more restrictive limits for API endpoints
-define('API_MAX_REQUESTS', 30);  // Maximum number of requests allowed per window
-define('API_TIME_WINDOW', 60);   // Time window in seconds (1 minute)
-define('API_BLOCK_TIME', 300);   // Block time in seconds (5 minutes)
+// Konfigurer mer restriktive grenser for API-endepunkter
+define('API_MAX_REQUESTS', 30);  // max requests per vindu
+define('API_TIME_WINDOW', 60);   // tid i sekunder
+define('API_BLOCK_TIME', 300);   // blokkeringstid i sekunder, 300s=5min
 
-// Override the default rate limit constants for API endpoints
+// Overstyr standard rate limit-konstanter for API-endepunkter
 define('MAX_REQUESTS', API_MAX_REQUESTS);
 define('TIME_WINDOW', API_TIME_WINDOW);
 define('BLOCK_TIME', API_BLOCK_TIME);
@@ -37,7 +37,7 @@ error_log("Method: " . $method);
 error_log("Endpoint: " . $endpoint);
 error_log("Subresource: " . $subresource);
 
-// Håndter CORS preflight requests
+// Håndter CORS preflight-forespørsler
 if ($method === 'OPTIONS') {
     http_response_code(200);
     exit();

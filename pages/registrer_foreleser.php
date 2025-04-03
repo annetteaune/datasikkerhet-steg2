@@ -127,7 +127,7 @@
             const passwordInput = document.getElementById('passord');
             const confirmPasswordInput = document.getElementById('bekreft_passord');
             
-            // Password validation checks
+            // Passordvalidering 
             const checks = {
                 length: {
                     regex: /.{8,}/,
@@ -159,12 +159,12 @@
                 }
             }
             
-            // Real-time password validation
+            // Real-time passordvalidering
             passwordInput.addEventListener('input', function() {
                 validatePassword(this.value);
             });
             
-            // Password confirmation check
+            // Passordbekreftelse
             confirmPasswordInput.addEventListener('input', function() {
                 if (this.value !== passwordInput.value) {
                     this.setCustomValidity('Passordene stemmer ikke overens');
@@ -173,7 +173,7 @@
                 }
             });
             
-            // PIN code validation
+            // PIN-kodevalidering
             const pinInput = document.getElementById('pin_kode');
             pinInput.addEventListener('input', function() {
                 this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
@@ -184,7 +184,7 @@
                 }
             });
             
-            // Show error message if exists
+            // Vis feilmelding hvis den eksisterer
             <?php if (isset($_SESSION['error_message'])): ?>
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'error-message';

@@ -1,32 +1,32 @@
 <?php
-// Constants for rate limiting
-define('MAX_LOGIN_ATTEMPTS', 5);  // Maximum number of attempts allowed
-define('LOCKOUT_TIME', 900);      // Lockout time in seconds (15 minutes)
-define('ATTEMPT_WINDOW', 300);    // Time window for attempts in seconds (5 minutes)
+// Konstanter for rate limiting
+define('MAX_LOGIN_ATTEMPTS', 5);  // Maksimal antall forsøk tillatt
+define('LOCKOUT_TIME', 900);      // Lockout-tid i sekunder (15 minutter)
+define('ATTEMPT_WINDOW', 300);    // Tidsvindu for forsøk i sekunder (5 minutter)
 
 /**
- * Check if the current IP is rate limited
- * @return array Array containing status and remaining time if locked out
+ * Sjekk om den aktuelle IP-en er rate-begrenset
+ * @return array Array som inneholder status og gjenstående tid hvis låst ut
  */
 function check_rate_limit() {
     $ip = $_SERVER['REMOTE_ADDR'];
     $current_time = time();
     
-    // Initialize attempts array if not exists
+    // Initialiser forsøksarray hvis den ikke eksisterer
     if (!isset($_SESSION['login_attempts'])) {
         $_SESSION['login_attempts'] = [];
     }
     
-    // Clean up old attempts
+    // Rens opp gamle forsøk
     $_SESSION['login_attempts'] = array_filter($_SESSION['login_attempts'], function($attempt) use ($current_time) {
         return $attempt['last_attempt'] > ($current_time - ATTEMPT_WINDOW);
     });
     
-    // Check if IP is locked out
+    // Sjekk om IP-en er låst ut
     if (isset($_SESSION['login_attempts'][$ip])) {
         $attempts = $_SESSION['login_attempts'][$ip];
         
-        // If too many attempts, check lockout
+        // Hvis for mange forsøk, sjekk låsningstid
         if ($attempts['count'] >= MAX_LOGIN_ATTEMPTS) {
             $time_remaining = LOCKOUT_TIME - ($current_time - $attempts['last_attempt']);
             
@@ -36,7 +36,7 @@ function check_rate_limit() {
                     'time_remaining' => ceil($time_remaining / 60) // Convert to minutes
                 ];
             } else {
-                // Reset attempts if lockout period is over
+                // Nullstill forsøk hvis låsningstid er over
                 unset($_SESSION['login_attempts'][$ip]);
             }
         }
@@ -46,8 +46,8 @@ function check_rate_limit() {
 }
 
 /**
- * Record a failed login attempt
- * @param string $ip IP address of the attempt
+ * Registrer et mislykket innloggingsforsøk
+ * @param string $ip IP-adressen til forsøket
  */
 function record_failed_attempt($ip) {
     $current_time = time();
@@ -64,8 +64,8 @@ function record_failed_attempt($ip) {
 }
 
 /**
- * Reset login attempts for an IP
- * @param string $ip IP address to reset
+ * Nullstill innloggingsforsøk for en IP-adresse
+ * @param string $ip IP-adressen som skal nullstilles
  */
 function reset_login_attempts($ip) {
     if (isset($_SESSION['login_attempts'][$ip])) {
@@ -74,9 +74,9 @@ function reset_login_attempts($ip) {
 }
 
 /**
- * Sanitize and validate input
- * @param string $input Input to sanitize
- * @return string Sanitized input
+ * Saner og valider input
+ * @param string $input Input som skal saneres
+ * @return string Sanert input
  */
 function sanitize_input($input) {
     $input = trim($input);
@@ -86,9 +86,9 @@ function sanitize_input($input) {
 }
 
 /**
- * Validate email format
- * @param string $email Email to validate
- * @return bool Whether email is valid
+ * Valider e-postformat
+ * @param string $email E-posten som skal valideres
+ * @return bool Om e-posten er gyldig
  */
 function validate_email($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;

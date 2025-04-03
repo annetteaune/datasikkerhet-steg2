@@ -3,7 +3,7 @@ session_start();
 session_unset();
 session_destroy();
 
-// Redirect to login page after logout
+// Omdiriger til login-side etter logout
 header("Location: ../pages/login.php");
 exit();
 ?>

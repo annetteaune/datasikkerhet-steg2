@@ -19,7 +19,7 @@ function loadEnv($path) {
     }
 }
 
-// Load environment variables
+// laster inn miljøvariabler 
 $envPath = __DIR__ . '/../.env';
 try {
     loadEnv($envPath);
@@ -27,7 +27,7 @@ try {
     die('Error loading .env file');
 }
 
-// Define database constants using environment variables
+// databasekonstanter
 define('DB_HOST', getenv('DB_HOST'));
 define('DB_USER', getenv('DB_USER'));
 define('DB_PASS', getenv('DB_PASS'));

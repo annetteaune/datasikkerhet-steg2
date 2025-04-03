@@ -2,12 +2,12 @@
 require_once 'rate_limiter.php';
 apply_rate_limit();
 
-// Start the session
+// Starte session
 session_start();
 
-// Check if the student is logged in
+// Sjekk om gjest er innlogget
 if (!isset($_SESSION['gjest_id'])) {
-    // Not logged in, redirect to login page
+    // ikke innlogget, redirect til login-side
     header("Location: ../pages/login.php");
     exit();
 }

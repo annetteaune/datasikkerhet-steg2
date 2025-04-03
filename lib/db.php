@@ -56,34 +56,34 @@ function close_db_connection($conn) {
 }
 
 /**
- * Validates password strength according to security requirements
- * - Minimum 8 characters
- * - At least one uppercase letter
- * - At least one number
- * - At least one special character
+ * Validerer passordstyrke etter sikkerhetskrav
+ * - Minimum 8 tegn
+ * - Minst én stor bokstav
+ * - Minst étt tall
+ * - Minst étt spesialtegn
  * 
- * @param string $password The password to validate
- * @return array Array with 'valid' boolean and 'message' string
+ * @param string $password Passordet som skal valideres
+ * @return array Array med 'valid' boolean og 'message' string
  */
 function validate_password($password) {
     $errors = [];
     
-    // Check minimum length
+    // Sjekk minimum lengde
     if (strlen($password) < 8) {
         $errors[] = "Passordet må være minst 8 tegn langt.";
     }
     
-    // Check for uppercase letter
+    // Sjekk for stor bokstav
     if (!preg_match('/[A-Z]/', $password)) {
         $errors[] = "Passordet må inneholde minst én stor bokstav.";
     }
     
-    // Check for number
+    // Sjekk for tall
     if (!preg_match('/[0-9]/', $password)) {
         $errors[] = "Passordet må inneholde minst ett tall.";
     }
     
-    // Check for special character
+    // Sjekk for spesialtegn
     if (!preg_match('/[^A-Za-z0-9]/', $password)) {
         $errors[] = "Passordet må inneholde minst ett spesialtegn.";
     }

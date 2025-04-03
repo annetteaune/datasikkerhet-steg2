@@ -32,16 +32,16 @@ session_start();
 
         <div class="form-container">
             <?php 
-            // Display error message if exists
+            // Vis feilmelding hvis den eksisterer
             if (isset($_SESSION['error'])) {
                 echo '<div class="error-message">' . htmlspecialchars($_SESSION['error']) . '</div>';
-                unset($_SESSION['error']); // Clear the error message after displaying
+                unset($_SESSION['error']); // slett feilmeldingen etter visning
             }
             
-            // Display success message if exists
+            // Vis success-melding hvis den eksisterer
             if (isset($_SESSION['success'])) {
                 echo '<div class="success-message">' . htmlspecialchars($_SESSION['success']) . '</div>';
-                unset($_SESSION['success']); // Clear the success message after displaying
+                unset($_SESSION['success']); // slett success-meldingen etter visning
             }
             ?>
 
@@ -103,7 +103,7 @@ session_start();
         const passwordInput = document.getElementById('passord');
         const confirmPasswordInput = document.getElementById('bekreft_passord');
         
-        // Password validation checks
+        // Passordvalidering
         const checks = {
             length: {
                 regex: /.{8,}/,
@@ -135,12 +135,12 @@ session_start();
             }
         }
         
-        // Real-time password validation
+        // Real-time passordvalidering
         passwordInput.addEventListener('input', function() {
             validatePassword(this.value);
         });
         
-        // Password confirmation check
+        // Passordbekreftelse
         confirmPasswordInput.addEventListener('input', function() {
             if (this.value !== passwordInput.value) {
                 this.setCustomValidity('Passordene stemmer ikke overens');
@@ -149,7 +149,7 @@ session_start();
             }
         });
         
-        // Show error message if exists
+        // Vis feilmelding hvis den eksisterer
         <?php if (isset($_SESSION['error_message'])): ?>
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';

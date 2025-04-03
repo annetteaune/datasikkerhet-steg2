@@ -1,10 +1,10 @@
 <?php
-// Start the session
+
 session_start();
 
-// Check if the student is logged in
+// Sjekk om innlogget
 if (!isset($_SESSION['student_fname'])) {
-    // Not logged in, redirect to login page
+    // Hvis ikke, redirect til login 
     header("Location: ../pages/login.php");
     exit();
 }

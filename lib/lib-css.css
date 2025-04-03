@@ -1,4 +1,4 @@
-/* Container for each message */
+/* Container for hver melding */
 .message-container {
   background-color: var(--background-color);
   border-radius: 8px;
@@ -13,7 +13,7 @@
   transform: translateY(-2px);
 }
 
-/* Style for the reply section */
+/* Stil for svar-delen */
 .reply {
   background-color: var(--background-color);
   border-radius: 6px;
@@ -271,7 +271,7 @@ button:hover {
   font-weight: bold;
 }
 
-/* Password validation styles */
+/* Passordvalideringsstiler */
 .password-requirements {
   font-size: 0.875rem;
   color: #64748b;
@@ -310,7 +310,7 @@ button:hover {
   color: var(--error-color);
 }
 
-/* Tooltip styles */
+/* Tooltip-stiler */
 .tooltip {
   position: relative;
   display: inline-block;
@@ -339,7 +339,7 @@ button:hover {
   opacity: 1;
 }
 
-/* Error message styles */
+/* Feilmeldingsstiler */
 .error-message {
   background-color: #fef2f2;
   color: #991b1b;

@@ -1,10 +1,9 @@
 <?php
-// Start the session
 session_start();
 
-// Check if the lecturer is logged in
+// Sjekk om foreleser er innlogget
 if (!isset($_SESSION['foreleser_id']) || !isset($_SESSION['user_type']) || $_SESSION['user_type'] !== 'lecturer') {
-    // Not logged in, redirect to login page
+    // Hvis ikke, mredirect til loginside
     header("Location: ../pages/foreleser_login.php");
     exit();
 }
