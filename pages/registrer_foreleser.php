@@ -31,40 +31,45 @@ setSecurityHeaders();
         </div>
 
         <div class="form-container">
-            <form class="registration-form" action="../lib/register_teacher_action.php" method="post" enctype="multipart/form-data">
+            <form class="registration-form" 
+                action="../lib/register_teacher_action.php" 
+                    method="post" enctype="multipart/form-data">
                 <?php
                 session_start();
-                if (isset($_SESSION['error_message'])): ?>
+                if (isset($_SESSION['error_message'])) : ?>
                     <div class="form-error"><?php echo htmlspecialchars($_SESSION['error_message']); ?></div>
                     <?php unset($_SESSION['error_message']); ?>
                 <?php endif; ?>
 
-                <?php if (isset($_SESSION['error_messages'])): ?>
-                    <?php foreach ($_SESSION['error_messages'] as $error): ?>
+                <?php if (isset($_SESSION['error_messages'])) : ?>
+                    <?php foreach ($_SESSION['error_messages'] as $error) : ?>
                         <div class="form-error"><?php echo htmlspecialchars($error); ?></div>
                     <?php endforeach; ?>
                     <?php unset($_SESSION['error_messages']); ?>
                 <?php endif; ?>
 
-                <?php if (isset($_GET['error_empty_form'])): ?>
+                <?php if (isset($_GET['error_empty_form'])) : ?>
                     <div class="form-error"><?php echo htmlspecialchars($_GET['error_empty_form']); ?></div>
                 <?php endif; ?>
 
                 <div class="form-group">
                     <label class="form-label" for="fornavn">Fornavn</label>
-                    <input class="form-input" type="text" id="fornavn" name="fornavn" required placeholder="Skriv inn fornavn">
+                    <input class="form-input" type="text" id="fornavn" 
+                        name="fornavn" required placeholder="Skriv inn fornavn">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="etternavn">Etternavn</label>
-                    <input class="form-input" type="text" id="etternavn" name="etternavn" required placeholder="Skriv inn etternavn">
+                    <input class="form-input" type="text" id="etternavn" 
+                        name="etternavn" required placeholder="Skriv inn etternavn">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="epost">E-post</label>
                     <input class="form-input" type="email" id="epost" name="epost" required placeholder="din@epost.no">
-                    <?php if (isset($_GET['error_email_already_in_use'])): ?>
-                        <div class="form-error"><?php echo htmlspecialchars($_GET['error_email_already_in_use']); ?></div>
+                    <?php if (isset($_GET['error_email_already_in_use'])) : ?>
+                        <div class="form-error"><?php echo htmlspecialchars($_GET['error_email_already_in_use']);
+                        ?></div>
                     <?php endif; ?>
                 </div>
 
@@ -72,7 +77,8 @@ setSecurityHeaders();
                     <label class="form-label" for="passord">Passord</label>
                     <input class="form-input" type="password" id="passord" name="passord" required 
                            pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
-                           title="Passordet må være minst 8 tegn langt og inneholde minst én stor bokstav, ett tall og ett spesialtegn">
+                           title="Passordet må være minst 8 tegn langt og 
+                            inneholde minst én stor bokstav, ett tall og ett spesialtegn">
                     <div class="password-requirements">
                         <ul>
                             <li id="length-check">Minst 8 tegn</li>
@@ -85,17 +91,20 @@ setSecurityHeaders();
 
                 <div class="form-group">
                     <label class="form-label" for="bekreft_passord">Bekreft passord</label>
-                    <input class="form-input" type="password" id="bekreft_passord" name="bekreft_passord" required>
+                    <input class="form-input" type="password" id="bekreft_passord" 
+                        name="bekreft_passord" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="emne_navn">Emnenavn</label>
-                    <input class="form-input" type="text" id="emne_navn" name="emne_navn" required placeholder="Skriv inn emnenavn">
+                    <input class="form-input" type="text" id="emne_navn" name="emne_navn" 
+                        required placeholder="Skriv inn emnenavn">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="emne_kode">Emnekode</label>
-                    <input class="form-input" type="text" id="emne_kode" name="emne_kode" required placeholder="F.eks. DAT100">
+                    <input class="form-input" type="text" id="emne_kode" name="emne_kode" 
+                        required placeholder="F.eks. DAT100">
                 </div>
 
                 <div class="form-group">
@@ -189,7 +198,7 @@ setSecurityHeaders();
             });
             
             // Vis feilmelding hvis den eksisterer
-            <?php if (isset($_SESSION['error_message'])): ?>
+            <?php if (isset($_SESSION['error_message'])) : ?>
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'error-message';
                 errorDiv.textContent = '<?php echo htmlspecialchars($_SESSION['error_message']); ?>';

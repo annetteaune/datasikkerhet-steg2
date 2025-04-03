@@ -101,7 +101,7 @@
 <body>
     <?php
     session_start();
-    
+
     if (!isset($_SESSION['student_id'])) {
         header("Location: student_login.php");
         exit();
@@ -109,9 +109,11 @@
 
     require_once("../lib/db.php");
 
+    use CleanSteg1\Database\Database;
+
     try {
-        // Opprett databasetilkobling med student-rolle
-        $conn = get_db_connection('student');
+        // Opprett databasetilkobling
+        $conn = Database::getConnection('student');
 
         // Hent studentprofil
         $stmt = $conn->prepare("CALL student_profile_view(?)");
@@ -121,7 +123,7 @@
 
         $student_id = $_SESSION['student_id'];
         $stmt->bind_param("i", $student_id);
-        
+
         if (!$stmt->execute()) {
             throw new Exception("Feil ved henting av studentprofil");
         }
@@ -137,14 +139,13 @@
         }
 
         $stmt->bind_param("i", $student_id);
-        
+
         if (!$stmt->execute()) {
             throw new Exception("Feil ved henting av emner");
         }
 
         $emner_result = $stmt->get_result();
         $stmt->close();
-
     } catch (Exception $e) {
         error_log("Feil i student_logged_in.php: " . $e->getMessage());
         $_SESSION['error'] = "En feil oppstod ved henting av data";
@@ -175,24 +176,25 @@
         <div class="dashboard-container">
             <section class="dashboard-section">
                 <h2>Dine emner</h2>
-                <?php if (isset($_SESSION['success'])): ?>
+                <?php if (isset($_SESSION['success'])) : ?>
                     <div class="form-success"><?php echo htmlspecialchars($_SESSION['success']); ?></div>
                     <?php unset($_SESSION['success']); ?>
                 <?php endif; ?>
-                <?php if (isset($_SESSION['error'])): ?>
+                <?php if (isset($_SESSION['error'])) : ?>
                     <div class="form-error"><?php echo htmlspecialchars($_SESSION['error']); ?></div>
                     <?php unset($_SESSION['error']); ?>
                 <?php endif; ?>
                 <div class="subject-grid">
-                    <?php if ($emner_result->num_rows > 0): ?>
-                        <?php while ($row = $emner_result->fetch_assoc()): ?>
+                    <?php if ($emner_result->num_rows > 0) : ?>
+                        <?php while ($row = $emner_result->fetch_assoc()) : ?>
                             <div class="subject-card">
                                 <h3><?php echo htmlspecialchars($row['emne_navn']); ?></h3>
                                 <p>Foreleser: <?php echo htmlspecialchars($row['foreleser_navn']); ?></p>
-                                <a href="meldinger.php?emne_id=<?php echo htmlspecialchars($row['emne_id']); ?>" class="card-link">Se meldinger</a>
+                                <a href="meldinger.php?emne_id=<?php echo htmlspecialchars($row['emne_id']);
+                                ?>" class="card-link">Se meldinger</a>
                             </div>
                         <?php endwhile; ?>
-                    <?php else: ?>
+                    <?php else : ?>
                         <p class="no-subjects">Du er ikke registrert i noen emner ennå.</p>
                     <?php endif; ?>
                 </div>
@@ -222,6 +224,6 @@
 </html>
 <?php
 if (isset($conn)) {
-    $conn->close();
+    Database::closeConnection($conn);
 }
 ?>

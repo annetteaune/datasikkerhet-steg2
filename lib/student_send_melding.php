@@ -1,6 +1,9 @@
 <?php
+
 session_start();
-require 'db.php';
+require_once 'db.php';
+
+use CleanSteg1\Database\Database;
 
 try {
     // Debug: Log session data
@@ -18,19 +21,20 @@ try {
     $innhold = trim($_POST['melding'] ?? '');
 
     // Debug
-    error_log("Using values - student_id: " . $student_id . ", emne_id: " . $emne_id . ", innhold length: " . strlen($innhold));
+    error_log("Using values - student_id: " . $student_id . ", emne_id: " .
+        $emne_id . ", innhold length: " . strlen($innhold));
 
     // Valider inputfelt
     if (empty($student_id)) {
         throw new Exception("Student ikke funnet");
     }
-    
+
     if (empty($emne_id) || empty($innhold)) {
         throw new Exception("Alle felt må fylles ut.");
     }
 
-    // Hent databaseforbindelse med student-rolle
-    $conn = get_db_connection('student');
+    // Opprett databasetilkobling
+    $conn = Database::getConnection('student');
 
     // Kall send_message-prosedyren
     $stmt = $conn->prepare("CALL send_message(?, ?, ?)");
@@ -39,10 +43,10 @@ try {
     }
 
     $stmt->bind_param("iis", $student_id, $emne_id, $innhold);
-    
+
     // Debug
     error_log("Executing send_message with params - student_id: $student_id, emne_id: $emne_id, innhold: $innhold");
-    
+
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -53,9 +57,8 @@ try {
     $response = $result->fetch_assoc();
 
     if ($response['result'] === 'SUCCESS') {
-        // Steng ressurser
-        $stmt->close();
-        close_db_connection($conn);
+        // Lukk databaseforbindelse
+        Database::closeConnection($conn);
 
         // Sett success-melding og omdiriger
         $_SESSION['success'] = "Melding er sendt til foreleser";
@@ -64,7 +67,6 @@ try {
     } else {
         throw new Exception($response['message'] ?? "En feil oppstod under sending av melding.");
     }
-
 } catch (Exception $e) {
     // Logg error og vis brukervennlig melding
     error_log("Melding sending feil: " . $e->getMessage());
@@ -72,4 +74,3 @@ try {
     header("Location: dashboard.php");
     exit();
 }
-?>

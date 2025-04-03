@@ -1,6 +1,9 @@
 <?php
+
 session_start();
-require 'db.php';
+require_once 'db.php';
+
+use CleanSteg1\Database\Database;
 
 try {
     // Valider at nødvendige felt er fylt ut
@@ -10,13 +13,13 @@ try {
 
     // Hent IP-adresse
     $ip_adresse = $_SERVER['REMOTE_ADDR'];
-    
+
     // Hent andre verdier
     $melding_id = filter_input(INPUT_POST, 'melding_id', FILTER_VALIDATE_INT);
     $innhold = $_POST['innhold'];
 
-    // Opprett databasetilkobling med gjest-rolle
-    $conn = get_db_connection('guest');
+    // Opprett databasetilkobling
+    $conn = Database::getConnection('guest');
 
     // Kall prosedyren med IP-adresse
     $stmt = $conn->prepare("CALL add_comment(?, ?, ?)");
@@ -40,16 +43,14 @@ try {
     }
 
     $stmt->close();
-    $conn->close();
+    Database::closeConnection($conn);
 
     // Omdiriger tilbake til dashboard
     header("Location: dashboard_gjest.php");
     exit();
-
 } catch (Exception $e) {
     error_log("Feil i submit_comment.php: " . $e->getMessage());
     $_SESSION['error'] = $e->getMessage();
     header("Location: dashboard_gjest.php");
     exit();
 }
-?>

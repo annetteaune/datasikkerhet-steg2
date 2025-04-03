@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
@@ -7,41 +8,51 @@ if (!isset($_SESSION['student_id'])) {
 
 require_once 'db.php';
 
+use CleanSteg1\Database\Database;
+
 try {
     $student_id = $_SESSION['student_id'];
     $current_pw = $_POST['current_pw'] ?? '';
     $new_pw = $_POST['new_pw'] ?? '';
     $confirm_pw = $_POST['confirm_pw'] ?? '';
-    
+
     // Valider påkrevde felt
     if (empty($current_pw) || empty($new_pw) || empty($confirm_pw)) {
         throw new Exception("Alle felt må fylles ut.");
     }
-    
+
     // Valider passordkrav
     if (strlen($new_pw) < 8) {
         throw new Exception("Nytt passord må være minst 8 tegn langt.");
     }
-    
+
     if (!preg_match('/[A-Z]/', $new_pw)) {
         throw new Exception("Nytt passord må inneholde minst én stor bokstav.");
     }
-    
+
     if (!preg_match('/[a-z]/', $new_pw)) {
         throw new Exception("Nytt passord må inneholde minst én liten bokstav.");
     }
-    
+
     if (!preg_match('/[0-9]/', $new_pw)) {
         throw new Exception("Nytt passord må inneholde minst ett tall.");
     }
-    
+
     // Sjekk at nytt passord og bekreftelse matcher
     if ($new_pw !== $confirm_pw) {
         throw new Exception("Passordene er ikke like.");
     }
-    
-    // hent db-kobling
-    $conn = get_db_connection('student');
+
+    // Valider passord
+    $password_validation = Database::validatePassword($new_pw);
+    if (!$password_validation['valid']) {
+        $_SESSION['error'] = $password_validation['message'];
+        header("Location: ../pages/error.php");
+        exit();
+    }
+
+    // Opprett databasetilkobling
+    $conn = Database::getConnection('student');
     error_log("Database connection established");
 
     // Hent studentens lagrede passord for verifisering
@@ -77,7 +88,7 @@ try {
     }
 
     $stmt->bind_param("iss", $student_id, $current_pw, $hashed_new_pw);
-    
+
     if (!$stmt->execute()) {
         throw new Exception("Feil ved utførelse av prosedyrekall: " . $stmt->error);
     }
@@ -93,25 +104,24 @@ try {
     }
 
     $stmt->close();
-    $conn->close();
+    // Lukk databaseforbindelse
+    Database::closeConnection($conn);
 
     // passordbytte suksess
     $_SESSION['pw_message'] = "Passordet ble oppdatert.";
     header("Location: dashboard.php");
     exit();
-
 } catch (Exception $e) {
     error_log("Feil i bytt_pw.php: " . $e->getMessage());
     $_SESSION['pw_message'] = $e->getMessage();
-    
+
     if (isset($stmt)) {
         $stmt->close();
     }
     if (isset($conn)) {
         $conn->close();
     }
-    
+
     header("Location: dashboard.php");
     exit();
 }
-?>

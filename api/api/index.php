@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
@@ -10,6 +11,8 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/Database.php';
 require_once __DIR__ . '/../includes/API.php';
+
+use CleanSteg1\API\API;
 
 $api = new API();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -40,7 +43,7 @@ try {
             case 'courses':
                 echo json_encode($api->getAvailableCourses());
                 break;
-                
+
             case 'messages':
                 if (!isset($_GET['emne_id']) || !isset($_GET['pin_kode'])) {
                     throw new Exception('Mangler påkrevde parametre: emne_id og pin_kode');
@@ -77,7 +80,7 @@ try {
         }
     } elseif ($method === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         if ($endpoint === 'register') {
             if ($subresource === 'student') {
                 echo json_encode($api->registerStudent(
@@ -112,7 +115,7 @@ try {
                 case 'login':
                     echo json_encode($api->login($data['email'], $data['password']));
                     break;
-                    
+
                 case 'messages':
                     echo json_encode($api->sendMessage(
                         $data['student_id'],
@@ -120,7 +123,7 @@ try {
                         $data['innhold']
                     ));
                     break;
-                    
+
                 case 'response':
                     echo json_encode($api->addResponse(
                         $data['melding_id'],
@@ -128,7 +131,7 @@ try {
                         $data['innhold']
                     ));
                     break;
-                    
+
                 case 'comment':
                     echo json_encode($api->addComment(
                         $data['melding_id'],
@@ -136,7 +139,7 @@ try {
                         $_SERVER['REMOTE_ADDR']
                     ));
                     break;
-                    
+
                 case 'report':
                     echo json_encode($api->reportMessage(
                         $data['melding_id'],
@@ -144,7 +147,7 @@ try {
                         $_SERVER['REMOTE_ADDR']
                     ));
                     break;
-                    
+
                 default:
                     throw new Exception('Ukjent endepunkt');
             }

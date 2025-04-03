@@ -15,17 +15,19 @@
     }
 
     require_once("../lib/db.php");
-    
+
+    use CleanSteg1\Database\Database;
+
     try {
         $subject_id = isset($_GET['emne_id']) ? $_GET['emne_id'] : null;
         $is_teacher = isset($_SESSION['foreleser_id']);
         $user_id = $is_teacher ? $_SESSION['foreleser_id'] : $_SESSION['student_id'];
         $user_name = $is_teacher ? $_SESSION['foreleser_navn'] : $_SESSION['student_navn'];
         $role = $is_teacher ? 'lecturer' : 'student';
-        
-        // Opprett databasetilkobling med riktig rolle
-        $conn = get_db_connection($role);
-        
+
+        // Opprett databasetilkobling
+        $conn = Database::getConnection('student');
+
         // Hent emne informasjon
         if ($subject_id) {
             $stmt = $conn->prepare("CALL get_subject_info(?)");
@@ -34,7 +36,7 @@
             $result = $stmt->get_result();
             $subject = $result->fetch_assoc();
             $stmt->close();
-            
+
             if (!$subject) {
                 throw new Exception("Kunne ikke finne emnet.");
             }
@@ -52,7 +54,8 @@
             <a href="../index.php" class="logo-link"><h1>HearMeOut</h1></a>
             <ul class="nav-links">
                 <li><a href="../index.php">Hjem</a></li>
-                <li><a href="<?php echo $is_teacher ? 'foreleser_logged_in.php' : 'student_logged_in.php'; ?>">Dashboard</a></li>
+                <li><a href="<?php echo $is_teacher ? 'foreleser_logged_in.php' :
+                    'student_logged_in.php'; ?>">Dashboard</a></li>
                 <li><a href="../lib/logout.php">Logg ut</a></li>
             </ul>
         </nav>
@@ -62,21 +65,23 @@
         <div class="hero-section">
             <div class="container">
                 <h1 class="hero-title">Meldinger</h1>
-                <?php if ($subject_id && $subject): ?>
+                <?php if ($subject_id && $subject) : ?>
                     <p class="hero-text">Emne: <?php echo htmlspecialchars($subject['subject_name']); ?></p>
-                <?php else: ?>
+                <?php else : ?>
                     <p class="hero-text">Velg et emne fra dashbordet for å se meldinger</p>
                 <?php endif; ?>
             </div>
         </div>
 
-        <?php if ($subject_id && $subject): ?>
+        <?php if ($subject_id && $subject) : ?>
             <div class="messages-container">
-                <?php if (isset($_SESSION['success'])): ?>
-                    <div class="alert alert-success"><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
+                <?php if (isset($_SESSION['success'])) : ?>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($_SESSION['success']);
+                    unset($_SESSION['success']); ?></div>
                 <?php endif; ?>
-                <?php if (isset($_SESSION['error'])): ?>
-                    <div class="alert alert-error"><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
+                <?php if (isset($_SESSION['error'])) : ?>
+                    <div class="alert alert-error"><?php echo htmlspecialchars($_SESSION['error']);
+                    unset($_SESSION['error']); ?></div>
                 <?php endif; ?>
 
                 <div class="messages-list">
@@ -86,37 +91,45 @@
                         $stmt->bind_param("i", $subject_id);
                         $stmt->execute();
                         $result = $stmt->get_result();
-                        
+
                         if ($result->num_rows > 0) {
                             while ($row = $result->fetch_assoc()) {
-                                $is_own_message = ($row['sender_type'] == ($is_teacher ? 'lecturer' : 'student')) && 
+                                $is_own_message = ($row['sender_type'] == ($is_teacher ? 'lecturer' : 'student')) &&
                                                 ($row['sender_id'] == $user_id);
-                                
-                                echo '<div class="message ' . ($is_own_message ? 'message-own' : 'message-other') . '">';
+
+                                echo '<div class="message ' . ($is_own_message ? 'message-own' :
+                                    'message-other') . '">';
                                 echo '<div class="message-header">';
-                                echo '<span class="message-sender">' . htmlspecialchars($row['sender_name']) . '</span>';
-                                echo '<span class="message-time">' . htmlspecialchars(date('d.m.Y H:i', strtotime($row['timestamp']))) . '</span>';
+                                echo '<span class="message-sender">' . htmlspecialchars($row['sender_name']) .
+                                    '</span>';
+                                echo '<span class="message-time">' . htmlspecialchars(date(
+                                    'd.m.Y H:i',
+                                    strtotime($row['timestamp'])
+                                )) . '</span>';
                                 echo '</div>';
-                                echo '<div class="message-content">' . htmlspecialchars($row['message_text']) . '</div>';
-                                
+                                echo '<div class="message-content">' .
+                                    htmlspecialchars($row['message_text']) . '</div>';
+
                                 // Hent kommentarer for meldingen
                                 $stmt2 = $conn->prepare("CALL get_message_comments(?)");
                                 $stmt2->bind_param("i", $row['message_id']);
                                 $stmt2->execute();
                                 $comments = $stmt2->get_result();
-                                
+
                                 if ($comments->num_rows > 0) {
                                     echo '<div class="message-comments">';
                                     while ($comment = $comments->fetch_assoc()) {
                                         echo '<div class="comment">';
-                                        echo '<span class="comment-sender">' . htmlspecialchars($comment['sender_name']) . ':</span> ';
-                                        echo '<span class="comment-text">' . htmlspecialchars($comment['comment_text']) . '</span>';
+                                        echo '<span class="comment-sender">' .
+                                            htmlspecialchars($comment['sender_name']) . ':</span> ';
+                                        echo '<span class="comment-text">' .
+                                            htmlspecialchars($comment['comment_text']) . '</span>';
                                         echo '</div>';
                                     }
                                     echo '</div>';
                                 }
                                 $stmt2->close();
-                                
+
                                 echo '</div>';
                             }
                         } else {
@@ -155,10 +168,8 @@
     </footer>
 
     <?php
-    // Lukk databasetilkoblingen
-    if (isset($conn)) {
-        $conn->close();
-    }
+    // Lukk databaseforbindelse
+    Database::closeConnection($conn);
     ?>
 </body>
 </html>

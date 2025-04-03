@@ -1,6 +1,8 @@
 <?php
 require_once 'lib/rate_limiter.php';
-apply_rate_limit();
+use CleanSteg1\Security\RateLimiter;
+use function CleanSteg1\Security\applyRateLimit;
+applyRateLimit();
 ?>
 <!DOCTYPE html>
 <html lang="en">

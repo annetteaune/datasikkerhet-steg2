@@ -32,8 +32,9 @@ setSecurityHeaders();
 
         <div class="form-container">
             <div class="action-cards">
-                <?php if (isset($_GET['student_registered_successfully'])): ?>
-                    <div class="form-success"><?php echo htmlspecialchars($_GET['student_registered_successfully']); ?></div>
+                <?php if (isset($_GET['student_registered_successfully'])) : ?>
+                    <div class="form-success"><?php echo htmlspecialchars($_GET['student_registered_successfully']);
+                    ?></div>
                 <?php endif; ?>
 
                 <div class="action-card">

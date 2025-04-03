@@ -32,13 +32,13 @@ setSecurityHeaders();
         </div>
 
         <div class="form-container">
-            <?php 
+            <?php
             // Vis feilmelding hvis den eksisterer
             if (isset($_SESSION['error'])) {
                 echo '<div class="error-message">' . htmlspecialchars($_SESSION['error']) . '</div>';
                 unset($_SESSION['error']); // slett feilmeldingen etter visning
             }
-            
+
             // Vis success-melding hvis den eksisterer
             if (isset($_SESSION['success'])) {
                 echo '<div class="success-message">' . htmlspecialchars($_SESSION['success']) . '</div>';
@@ -49,24 +49,28 @@ setSecurityHeaders();
             <form action="../lib/register_student_action.php" method="post">
                 <div class="form-group">
                     <label class="form-label" for="fornavn">Fornavn</label>
-                    <input class="form-input" type="text" id="fornavn" name="fornavn" required placeholder="Skriv inn fornavn">
+                    <input class="form-input" type="text" id="fornavn" 
+                        name="fornavn" required placeholder="Skriv inn fornavn">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="etternavn">Etternavn</label>
-                    <input class="form-input" type="text" id="etternavn" name="etternavn" required placeholder="Skriv inn etternavn">
+                    <input class="form-input" type="text" id="etternavn" 
+                        name="etternavn" required placeholder="Skriv inn etternavn">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="epost">E-post</label>
-                    <input class="form-input" type="email" id="epost" name="epost" required placeholder="din@epost.no">
+                    <input class="form-input" type="email" id="epost" 
+                        name="epost" required placeholder="din@epost.no">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="passord">Passord</label>
                     <input class="form-input" type="password" id="passord" name="passord" required 
                            pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
-                           title="Passordet må være minst 8 tegn langt og inneholde minst én stor bokstav, ett tall og ett spesialtegn">
+                           title="Passordet må være minst 8 tegn langt og 
+                            inneholde minst én stor bokstav, ett tall og ett spesialtegn">
                     <div class="password-requirements">
                         <ul>
                             <li id="length-check">Minst 8 tegn</li>
@@ -79,7 +83,8 @@ setSecurityHeaders();
 
                 <div class="form-group">
                     <label class="form-label" for="bekreft_passord">Bekreft passord</label>
-                    <input class="form-input" type="password" id="bekreft_passord" name="bekreft_passord" required>
+                    <input class="form-input" type="password" id="bekreft_passord" 
+                        name="bekreft_passord" required>
                 </div>
 
                 <button type="submit" class="form-submit">Registrer deg</button>
@@ -151,11 +156,12 @@ setSecurityHeaders();
         });
         
         // Vis feilmelding hvis den eksisterer
-        <?php if (isset($_SESSION['error_message'])): ?>
+        <?php if (isset($_SESSION['error_message'])) : ?>
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
             errorDiv.textContent = '<?php echo htmlspecialchars($_SESSION['error_message']); ?>';
-            document.querySelector('.form-container').insertBefore(errorDiv, document.querySelector('.form-group'));
+            document.querySelector('.form-container').insertBefore(errorDiv, 
+                document.querySelector('.form-group'));
         <?php endif; ?>
     });
     </script>

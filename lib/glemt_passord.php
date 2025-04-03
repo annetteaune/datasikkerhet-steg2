@@ -29,30 +29,33 @@
         </div>
 
         <div class="form-container">
-            <?php if (isset($_GET['tomme_felt'])): ?>
+            <?php if (isset($_GET['tomme_felt'])) : ?>
                 <div class="form-error"><?php echo htmlspecialchars($_GET['tomme_felt']); ?></div>
             <?php endif; ?>
 
             <form action="tilbakestill_passord.php" method="post">
                 <div class="form-group">
                     <label class="form-label" for="email">E-post</label>
-                    <input class="form-input" type="email" id="email" name="email" required placeholder="din@epost.no">
+                    <input class="form-input" type="email" id="email" 
+                        name="email" required placeholder="din@epost.no">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="emne_kode">Emne kode</label>
-                    <input class="form-input" type="text" id="emne_kode" name="emne_kode" required placeholder="Skriv inn emnekode">
+                    <input class="form-input" type="text" id="emne_kode" 
+                        name="emne_kode" required placeholder="Skriv inn emnekode">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="pin_kode">Emne PIN</label>
-                    <input class="form-input" type="text" id="pin_kode" name="pin_kode" required placeholder="Skriv inn PIN-kode">
+                    <input class="form-input" type="text" id="pin_kode" 
+                        name="pin_kode" required placeholder="Skriv inn PIN-kode">
                 </div>
                 
                 <button type="submit" class="form-submit">Tilbakestill passord</button>
             </form>
 
-            <?php if (isset($_GET['pw_byttet'])): ?>
+            <?php if (isset($_GET['pw_byttet'])) : ?>
                 <div class="form-success"><?php echo htmlspecialchars($_GET['pw_byttet']); ?></div>
             <?php endif; ?>
         </div>

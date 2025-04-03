@@ -1,6 +1,9 @@
 <?php
 require_once '../lib/rate_limiter.php';
-apply_rate_limit();
+use CleanSteg1\Security\RateLimiter;
+use function CleanSteg1\Security\applyRateLimit;
+
+applyRateLimit();
 
 require_once '../lib/security_headers.php';
 setSecurityHeaders();
@@ -36,9 +39,9 @@ session_start();
         </div>
 
         <div class="form-container">
-            <?php if (isset($_SESSION['error_message'])): ?>
+            <?php if (isset($_SESSION['error_message'])) : ?>
                 <div class="error-message">
-                    <?php 
+                    <?php
                     echo htmlspecialchars($_SESSION['error_message']);
                     unset($_SESSION['error_message']); // Fjern feilmeldingen etter visning
                     ?>
@@ -48,12 +51,14 @@ session_start();
             <form action="../lib/login_action_student.php" method="post">
                 <div class="form-group">
                     <label class="form-label" for="email">E-post</label>
-                    <input class="form-input" type="email" id="email" name="email" required placeholder="din@epost.no">
+                    <input class="form-input" type="email" id="email" name="email" 
+                        required placeholder="din@epost.no">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="password">Passord</label>
-                    <input class="form-input" type="password" id="password" name="password" required placeholder="Skriv inn passord">
+                    <input class="form-input" type="password" id="password" name="password" 
+                        required placeholder="Skriv inn passord">
                 </div>
                 
                 <button type="submit" class="form-submit">Logg inn</button>
@@ -65,7 +70,8 @@ session_start();
 
             <div class="form-footer">
                 <p>Har du ikke en bruker? <a href="registrer_student.php">Registrer deg her</a></p>
-                <p class="mt-2">Er du foreleser? <a href="registrer_foreleser.php">Registrer deg som foreleser</a></p>
+                <p class="mt-2">Er du foreleser? <a href="registrer_foreleser.php">
+                        Registrer deg som foreleser</a></p>
             </div>
         </div>
     </main>

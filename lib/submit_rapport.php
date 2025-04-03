@@ -1,6 +1,9 @@
 <?php
+
 session_start();
-require 'db.php';
+require_once 'db.php';
+
+use CleanSteg1\Database\Database;
 
 // Sjekk at forespørselen er POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -13,7 +16,7 @@ try {
     // Hent og valider inndata
     $melding_id = filter_input(INPUT_POST, 'melding_id', FILTER_VALIDATE_INT);
     $grunn = trim($_POST['grunn'] ?? '');
-    
+
     // Hent IP-adresse
     $ip_adresse = $_SERVER['REMOTE_ADDR'];
 
@@ -22,8 +25,8 @@ try {
         throw new Exception("Alle påkrevde felt må fylles ut");
     }
 
-    // Opprett databasetilkobling med gjest-rolle
-    $conn = get_db_connection('guest');
+    // Opprett databasetilkobling
+    $conn = Database::getConnection('guest');
 
     // Kall lagret prosedyre for å rapportere melding
     $stmt = $conn->prepare("CALL report_message(?, ?, ?, ?)");
@@ -34,7 +37,7 @@ try {
     // For gjester sender vi NULL som student_id
     $student_id = null;
     $stmt->bind_param("isis", $melding_id, $ip_adresse, $student_id, $grunn);
-    
+
     if (!$stmt->execute()) {
         throw new Exception("Feil ved utførelse av prosedyrekall");
     }
@@ -50,16 +53,14 @@ try {
     }
 
     $stmt->close();
-    $conn->close();
+    Database::closeConnection($conn);
 
     // Omdiriger tilbake til dashboard
     header("Location: dashboard_gjest.php");
     exit();
-
 } catch (Exception $e) {
     error_log("Feil i submit_rapport.php: " . $e->getMessage());
     $_SESSION['error'] = $e->getMessage();
     header("Location: dashboard_gjest.php");
     exit();
 }
-?>

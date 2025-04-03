@@ -20,14 +20,14 @@ session_start();
     <main>
         <div class="container">
             <h2>Beklager, det oppstod en feil</h2>
-            <?php if (isset($_SESSION['error'])): ?>
+            <?php if (isset($_SESSION['error'])) : ?>
                 <div class="error-message">
-                    <?php 
-                    echo htmlspecialchars($_SESSION['error']); 
+                    <?php
+                    echo htmlspecialchars($_SESSION['error']);
                     unset($_SESSION['error']);
                     ?>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <div class="error-message">
                     En ukjent feil har oppstått. Vennligst prøv igjen senere.
                 </div>

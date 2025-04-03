@@ -4,27 +4,29 @@ session_start();
 
 // Sjekk om innlogget
 if (!isset($_SESSION['student_fname'])) {
-    // Hvis ikke, redirect til login 
+    // Hvis ikke, redirect til login
     header("Location: ../pages/login.php");
     exit();
 }
 
-require 'db.php';
+require_once 'db.php';
+
+use CleanSteg1\Database\Database;
 
 try {
-    // Opprett databasetilkobling med student-rolle
-    $conn = get_db_connection('student');
+    // Opprett databasetilkobling
+    $conn = Database::getConnection('student');
 
     // Hent alle emner
     $stmt = $conn->prepare("SELECT emne_id, emne_navn FROM emner ORDER BY emne_navn");
     if (!$stmt) {
         throw new Exception("Feil ved forberedelse av emne-spørring");
     }
-    
+
     if (!$stmt->execute()) {
         throw new Exception("Feil ved henting av emner");
     }
-    
+
     $emner_result = $stmt->get_result();
     $stmt->close();
 
@@ -42,12 +44,11 @@ try {
 
     $meldinger_result = $stmt->get_result();
     $stmt->close();
-
 } catch (Exception $e) {
     error_log("Feil i dashboard.php: " . $e->getMessage());
     $_SESSION['error'] = "En feil oppstod ved henting av data: " . $e->getMessage();
     if (isset($conn)) {
-        close_db_connection($conn);
+        Database::closeConnection($conn);
     }
     header("Location: ../pages/error.php");
     exit();
@@ -67,7 +68,8 @@ try {
         <nav>
             <a href="../index.php" class="logo-link"><h1>HearMeOut</h1></a>
             <ul class="nav-links">
-                <h2>Velkommen, <?php echo htmlspecialchars($_SESSION['student_fname'] . ' ' . $_SESSION['student_lname']); ?>!</h2>
+                <h2>Velkommen, <?php echo htmlspecialchars($_SESSION['student_fname']
+                    . ' ' . $_SESSION['student_lname']); ?>!</h2>
                 <li><a href="logout.php">Logg ut</a></li>
             </ul>
         </nav>
@@ -77,9 +79,9 @@ try {
         <section class="messages-section">
             <div class="container">
                 <h2>Send ny melding</h2>
-                <?php if (isset($_SESSION['success'])): ?>
+                <?php if (isset($_SESSION['success'])) : ?>
                     <div class="success-message">
-                        <?php 
+                        <?php
                         echo htmlspecialchars($_SESSION['success']);
                         unset($_SESSION['success']);
                         ?>
@@ -91,8 +93,8 @@ try {
                         <label for="emne_id">Velg emne:</label>
                         <select name="emne_id" id="emne_id" required>
                             <option value="">--Velg et emne--</option>
-                            <?php if ($emner_result && $emner_result->num_rows > 0): ?>
-                                <?php while ($row = $emner_result->fetch_assoc()): ?>
+                            <?php if ($emner_result && $emner_result->num_rows > 0) : ?>
+                                <?php while ($row = $emner_result->fetch_assoc()) : ?>
                                     <option value="<?php echo htmlspecialchars($row['emne_id']); ?>">
                                         <?php echo htmlspecialchars($row['emne_navn']); ?>
                                     </option>
@@ -111,42 +113,53 @@ try {
 
                 <h2>Dine meldinger</h2>
                 <div class="messages-list">
-                    <?php if ($meldinger_result && $meldinger_result->num_rows > 0): ?>
-                        <?php while ($melding = $meldinger_result->fetch_assoc()): ?>
+                    <?php if ($meldinger_result && $meldinger_result->num_rows > 0) : ?>
+                        <?php while ($melding = $meldinger_result->fetch_assoc()) : ?>
                             <div class="message-container">
                                 <div class="message-header">
                                     <h3><?php echo htmlspecialchars($melding['emne_navn']); ?></h3>
-                                    <span class="message-time">Sendt: <?php echo htmlspecialchars(date('d.m.Y H:i', strtotime($melding['melding_tidspunkt']))); ?></span>
+                                    <span class="message-time">Sendt: <?php echo htmlspecialchars(date(
+                                        'd.m.Y H:i',
+                                        strtotime($melding['melding_tidspunkt'])
+                                    )); ?></span>
                                 </div>
                                 
                                 <div class="message-content">
                                     <p><?php echo nl2br(htmlspecialchars($melding['melding_innhold'])); ?></p>
                                 </div>
 
-                                <?php if ($melding['svar_innhold']): ?>
+                                <?php if ($melding['svar_innhold']) : ?>
                                     <div class="message-response">
-                                        <h4>Svar fra <?php echo htmlspecialchars($melding['foreleser_fornavn'] . ' ' . $melding['foreleser_etternavn']); ?></h4>
-                                        <span class="response-time">Besvart: <?php echo htmlspecialchars(date('d.m.Y H:i', strtotime($melding['svar_tidspunkt']))); ?></span>
+                                        <h4>Svar fra <?php echo htmlspecialchars($melding['foreleser_fornavn'] . '
+                                             ' . $melding['foreleser_etternavn']); ?></h4>
+                                        <span class="response-time">Besvart: <?php echo htmlspecialchars(date(
+                                            'd.m.Y H:i',
+                                            strtotime($melding['svar_tidspunkt'])
+                                        )); ?></span>
                                         <p><?php echo nl2br(htmlspecialchars($melding['svar_innhold'])); ?></p>
                                     </div>
                                 <?php endif; ?>
 
                                 <?php
                                 // Hent kommentarer fra message_comments_view
-                                $stmt = $conn->prepare("SELECT * FROM message_comments_view WHERE melding_id = ? ORDER BY tidspunkt ASC");
+                                $stmt = $conn->prepare("SELECT * FROM message_comments_view 
+                                    WHERE melding_id = ? ORDER BY tidspunkt ASC");
                                 if ($stmt) {
                                     $stmt->bind_param("i", $melding['melding_id']);
                                     $stmt->execute();
                                     $comments = $stmt->get_result();
-                                    
-                                    if ($comments && $comments->num_rows > 0): ?>
+
+                                    if ($comments && $comments->num_rows > 0) : ?>
                                         <div class="message-comments">
                                             <h4>Kommentarer</h4>
-                                            <?php while ($comment = $comments->fetch_assoc()): ?>
+                                            <?php while ($comment = $comments->fetch_assoc()) : ?>
                                                 <div class="comment">
                                                     <p><?php echo nl2br(htmlspecialchars($comment['innhold'])); ?></p>
                                                     <span class="comment-time">
-                                                        <?php echo htmlspecialchars(date('d.m.Y H:i', strtotime($comment['tidspunkt']))); ?>
+                                                        <?php echo htmlspecialchars(date(
+                                                            'd.m.Y H:i',
+                                                            strtotime($comment['tidspunkt'])
+                                                        )); ?>
                                                     </span>
                                                 </div>
                                             <?php endwhile; ?>
@@ -157,7 +170,7 @@ try {
                                 ?>
                             </div>
                         <?php endwhile; ?>
-                    <?php else: ?>
+                    <?php else : ?>
                         <p>Du har ingen meldinger enda.</p>
                     <?php endif; ?>
                 </div>
@@ -169,10 +182,11 @@ try {
                 <h2>Bytt passord</h2>
                 <div class="password-form">
                     <form action="bytt_pw.php" method="POST">
-                        <?php if (isset($_SESSION['pw_message'])): ?>
-                            <div class="<?php echo strpos($_SESSION['pw_message'], 'feil') !== false ? 'error' : 'success'; ?>">
-                                <?php 
-                                echo htmlspecialchars($_SESSION['pw_message']); 
+                        <?php if (isset($_SESSION['pw_message'])) : ?>
+                            <div class="<?php echo strpos($_SESSION['pw_message'], 'feil')
+                                !== false ? 'error' : 'success'; ?>">
+                                <?php
+                                echo htmlspecialchars($_SESSION['pw_message']);
                                 unset($_SESSION['pw_message']);
                                 ?>
                             </div>
@@ -209,6 +223,6 @@ try {
 </html>
 <?php
 if (isset($conn)) {
-    close_db_connection($conn);
+    Database::closeConnection($conn);
 }
 ?>

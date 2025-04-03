@@ -112,7 +112,7 @@
 <body>
     <?php
     session_start();
-    
+
     if (!isset($_SESSION['foreleser_id'])) {
         header("Location: foreleser_login.php");
         exit();
@@ -120,9 +120,11 @@
 
     require_once("../lib/db.php");
 
+    use CleanSteg1\Database\Database;
+
     try {
-        // Opprett databasetilkobling med foreleser-rolle
-        $conn = get_db_connection('lecturer');
+        // Opprett databasetilkobling
+        $conn = Database::getConnection('lecturer');
 
         // Hent foreleserprofil
         $stmt = $conn->prepare("CALL lecturer_profile_view(?)");
@@ -132,7 +134,7 @@
 
         $foreleser_id = $_SESSION['foreleser_id'];
         $stmt->bind_param("i", $foreleser_id);
-        
+
         if (!$stmt->execute()) {
             throw new Exception("Feil ved henting av foreleserprofil");
         }
@@ -148,14 +150,13 @@
         }
 
         $stmt->bind_param("i", $foreleser_id);
-        
+
         if (!$stmt->execute()) {
             throw new Exception("Feil ved henting av emner");
         }
 
         $emner_result = $stmt->get_result();
         $stmt->close();
-
     } catch (Exception $e) {
         error_log("Feil i foreleser_logged_in.php: " . $e->getMessage());
         $_SESSION['error'] = "En feil oppstod ved henting av data";
@@ -178,7 +179,8 @@
     <main>
         <div class="hero-section">
             <div class="container">
-                <h1 class="hero-title">Velkommen, <?php echo htmlspecialchars($profile['foreleser_navn']); ?>!</h1>
+                <h1 class="hero-title">Velkommen, 
+                        <?php echo htmlspecialchars($profile['foreleser_navn']); ?>!</h1>
                 <p class="hero-text">Her er en oversikt over dine emner og meldinger</p>
             </div>
         </div>
@@ -186,26 +188,29 @@
         <div class="dashboard-container">
             <section class="dashboard-section">
                 <h2>Dine emner</h2>
-                <?php if (isset($_SESSION['success'])): ?>
+                <?php if (isset($_SESSION['success'])) : ?>
                     <div class="form-success"><?php echo htmlspecialchars($_SESSION['success']); ?></div>
                     <?php unset($_SESSION['success']); ?>
                 <?php endif; ?>
-                <?php if (isset($_SESSION['error'])): ?>
+                <?php if (isset($_SESSION['error'])) : ?>
                     <div class="form-error"><?php echo htmlspecialchars($_SESSION['error']); ?></div>
                     <?php unset($_SESSION['error']); ?>
                 <?php endif; ?>
                 <div class="subject-grid">
-                    <?php if ($emner_result->num_rows > 0): ?>
-                        <?php while ($row = $emner_result->fetch_assoc()): ?>
+                    <?php if ($emner_result->num_rows > 0) : ?>
+                        <?php while ($row = $emner_result->fetch_assoc()) : ?>
                             <div class="subject-card">
                                 <h3><?php echo htmlspecialchars($row['emne_navn']); ?></h3>
                                 <p>Emne kode: <?php echo htmlspecialchars($row['emne_kode']); ?></p>
-                                <p>PIN-kode: <span class="pin-code"><?php echo htmlspecialchars($row['pin_kode']); ?></span></p>
-                                <p class="student-count">Antall studenter: <?php echo htmlspecialchars($row['antall_studenter']); ?></p>
-                                <a href="meldinger.php?emne_id=<?php echo htmlspecialchars($row['emne_id']); ?>" class="card-link">Se meldinger</a>
+                                <p>PIN-kode: 
+                                    <span class="pin-code"><?php echo htmlspecialchars($row['pin_kode']); ?></span></p>
+                                <p class="student-count">
+                                    Antall studenter: <?php echo htmlspecialchars($row['antall_studenter']); ?></p>
+                                <a href="meldinger.php?emne_id=<?php echo
+                                    htmlspecialchars($row['emne_id']); ?>" class="card-link">Se meldinger</a>
                             </div>
                         <?php endwhile; ?>
-                    <?php else: ?>
+                    <?php else : ?>
                         <p class="no-subjects">Du har ingen registrerte emner ennå.</p>
                     <?php endif; ?>
                 </div>
@@ -249,6 +254,6 @@
 </html>
 <?php
 if (isset($conn)) {
-    $conn->close();
+    Database::closeConnection($conn);
 }
 ?> 

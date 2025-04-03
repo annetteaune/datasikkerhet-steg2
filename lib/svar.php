@@ -1,6 +1,9 @@
 <?php
+
 session_start();
-require 'db.php';
+require_once 'db.php';
+
+use CleanSteg1\Database\Database;
 
 try {
     // Sørge for at foreleseren er logget inn
@@ -18,8 +21,8 @@ try {
         throw new Exception("Alle felt må fylles ut.");
     }
 
-    // Hent databaseforbindelse med foreleser-rolle
-    $conn = get_db_connection('lecturer');
+    // Opprett databasetilkobling
+    $conn = Database::getConnection('lecturer');
 
     // Kall send_response-prosedyren
     $stmt = $conn->prepare("CALL send_response(?, ?, ?)");
@@ -38,9 +41,8 @@ try {
     $response = $result->fetch_assoc();
 
     if ($response['result'] === 'SUCCESS') {
-        // Steng ressurser
-        $stmt->close();
-        close_db_connection($conn);
+        // Lukk databaseforbindelse
+        Database::closeConnection($conn);
 
         // Sett success-melding og omdiriger
         $_SESSION['success_message'] = "Svar er sendt til student";
@@ -49,7 +51,6 @@ try {
     } else {
         throw new Exception($response['message'] ?? "En feil oppstod under sending av svar.");
     }
-
 } catch (Exception $e) {
     // Logg error og vis brukervennlig melding
     error_log("Svar sending feil: " . $e->getMessage());
@@ -57,4 +58,3 @@ try {
     header("Location: dashboard_foreleser.php?error=1");
     exit();
 }
-?>
