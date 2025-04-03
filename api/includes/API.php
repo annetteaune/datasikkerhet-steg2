@@ -14,18 +14,27 @@
  * @link       https://github.com/yourusername/cleanSteg1
  */
 
+declare(strict_types=1);
+
 namespace CleanSteg1\API;
 
-use CleanSteg1\API\Database;
+use CleanSteg1\Database\Database;
 use mysqli;
 use Exception;
 
 class API
 {
+    /** @var Database Database connection handler */
     private Database $db;
+
+    /** @var mysqli Active database connection */
     private mysqli $conn;
+
+    /**
+     * @var string Path to upload directory
+     * @note På server: '../../img/' for å samkjøre opplasningsmapper
+     */
     private string $upload_dir = '../img/';
-    //   private $upload_dir = '../../img/'; på server for å samkjøre opplasningsmapper
 
     public function __construct()
     {
@@ -134,7 +143,7 @@ class API
      * @param string $etternavn Foreleserens etternavn
      * @param string $epost Foreleserens epost
      * @param string $passord Foreleserens passord
-     * @param array $bilde Foreleserens bilde
+     * @param array<string, mixed> $bilde Foreleserens bilde
      * @param string $emne_navn Emnenavn
      * @param string $emne_kode Emnekode
      * @param string $pin_kode PIN-kode for emnet
@@ -251,16 +260,16 @@ class API
     public function getCourseInfo(int $emne_id, string $pin_kode): array
     {
         try {
-            // Bruker public_courses_view
-            $stmt = $this->conn->prepare("SELECT * FROM public_courses_view WHERE emne_id = ? AND pin_kode = ?");
+            $stmt = $this->conn->prepare("CALL get_course_info(?, ?)");
             $stmt->bind_param('is', $emne_id, $pin_kode);
             $stmt->execute();
             $result = $stmt->get_result();
+            $response = $result->fetch_assoc();
 
-            if ($result->num_rows > 0) {
-                return ['status' => 'success', 'data' => $result->fetch_assoc()];
+            if ($response['success'] == 1) {
+                return ['status' => 'success', 'data' => $response];
             }
-            return ['status' => 'error', 'message' => 'Emne ikke funnet eller ugyldig PIN'];
+            return ['status' => 'error', 'message' => $response['message']];
         } catch (Exception $e) {
             error_log("Feil i getCourseInfo: " . $e->getMessage());
             return ['status' => 'error', 'message' => 'En feil oppstod ved henting av emneinformasjon'];
@@ -268,58 +277,61 @@ class API
     }
 
     /**
-     * Henter alle tilgjengelige emner
+     * Henter tilgjengelige emner
      *
      * @return array Response med liste over emner eller feilmelding
      */
     public function getAvailableCourses(): array
     {
         try {
-            // Bruker public_courses_view
-            $stmt = $this->conn->prepare("SELECT * FROM public_courses_view");
+            $stmt = $this->conn->prepare("SELECT * FROM available_courses_view");
             $stmt->execute();
             $result = $stmt->get_result();
-
             $courses = [];
-            while ($row = $result->fetch_assoc()) {
-                $courses[] = $row;
+
+            while ($course = $result->fetch_assoc()) {
+                $courses[] = $course;
             }
+
             return ['status' => 'success', 'data' => $courses];
         } catch (Exception $e) {
             error_log("Feil i getAvailableCourses: " . $e->getMessage());
-            return ['status' => 'error', 'message' => 'En feil oppstod ved henting av tilgjengelige emner'];
+            return ['status' => 'error', 'message' => 'En feil oppstod ved henting av emneliste'];
         }
     }
 
     /**
      * Håndterer bildeopplasting
      *
-     * @param array $image Bildeinformasjon
-     * @return string Filnavn på det opplastede bildet
+     * @param array<string, mixed> $image Bildeinformasjon
+     * @return string Path til det opplastede bildet
      * @throws Exception Hvis opplasting feiler
      */
     private function handleImageUpload(array $image): string
     {
-        try {
-            if (!is_dir($this->upload_dir)) {
-                mkdir($this->upload_dir, 0777, true);
-            }
-
-            $filename = uniqid() . '_' . basename($image['name']);
-            $target_path = $this->upload_dir . $filename;
-
-            if (move_uploaded_file($image['tmp_name'], $target_path)) {
-                return $filename;
-            }
-            throw new Exception('Kunne ikke laste opp bilde');
-        } catch (Exception $e) {
-            error_log("Feil i handleImageUpload: " . $e->getMessage());
-            throw new Exception('Feil ved opplasting av bilde');
+        if (!isset($image['tmp_name']) || !isset($image['name'])) {
+            throw new Exception('Ugyldig bildefil');
         }
+
+        $file_extension = strtolower(pathinfo($image['name'], PATHINFO_EXTENSION));
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+        if (!in_array($file_extension, $allowed_extensions)) {
+            throw new Exception('Ugyldig filtype. Tillatte filtyper: ' . implode(', ', $allowed_extensions));
+        }
+
+        $new_filename = uniqid() . '.' . $file_extension;
+        $target_path = $this->upload_dir . $new_filename;
+
+        if (!move_uploaded_file($image['tmp_name'], $target_path)) {
+            throw new Exception('Kunne ikke laste opp bilde');
+        }
+
+        return $new_filename;
     }
 
     /**
-     * Håndterer brukerinnlogging
+     * Logger inn en bruker
      *
      * @param string $email Brukerens epost
      * @param string $password Brukerens passord
@@ -328,7 +340,7 @@ class API
     public function login(string $email, string $password): array
     {
         try {
-            $stmt = $this->conn->prepare("CALL authenticate_user(?, ?)");
+            $stmt = $this->conn->prepare("CALL login_user(?, ?)");
             $stmt->bind_param('ss', $email, $password);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -337,13 +349,10 @@ class API
             if ($response['success'] == 1) {
                 return [
                     'status' => 'success',
-                    'type' => $response['user_type'],
                     'data' => [
-                        'id' => $response['user_id'],
-                        'fornavn' => $response['fornavn'],
-                        'etternavn' => $response['etternavn'],
-                        'epost' => $response['epost'],
-                        'bilde' => $response['bilde'] ?? null
+                        'user_id' => $response['user_id'],
+                        'user_type' => $response['user_type'],
+                        'name' => $response['name']
                     ]
                 ];
             }
@@ -365,7 +374,6 @@ class API
     public function sendMessage(int $studentId, int $emneId, string $innhold): array
     {
         try {
-            // Bruker lagret prosedyre send_message
             $stmt = $this->conn->prepare("CALL send_message(?, ?, ?)");
             $stmt->bind_param('iis', $studentId, $emneId, $innhold);
             $stmt->execute();
@@ -396,11 +404,17 @@ class API
             $stmt->bind_param('is', $emneId, $pinKode);
             $stmt->execute();
             $result = $stmt->get_result();
+            $response = $result->fetch_assoc();
+
+            if ($response['success'] == 0) {
+                return ['status' => 'error', 'message' => $response['message']];
+            }
 
             $messages = [];
-            while ($row = $result->fetch_assoc()) {
-                $messages[] = $row;
+            while ($message = $result->fetch_assoc()) {
+                $messages[] = $message;
             }
+
             return ['status' => 'success', 'data' => $messages];
         } catch (Exception $e) {
             error_log("Feil i getMessages: " . $e->getMessage());
@@ -409,7 +423,7 @@ class API
     }
 
     /**
-     * Legger til svar på en melding
+     * Legger til et svar på en melding
      *
      * @param int $meldingId Meldingens ID
      * @param int $foreleserId Foreleserens ID
@@ -436,7 +450,7 @@ class API
     }
 
     /**
-     * Legger til kommentar på en melding
+     * Legger til en kommentar på en melding
      *
      * @param int $meldingId Meldingens ID
      * @param string $innhold Kommentaren
