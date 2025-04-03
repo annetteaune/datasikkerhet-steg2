@@ -1,23 +1,23 @@
 <?php
-// Disable error reporting for notices and warnings in production
+// Diable i produksjon
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
 
-// Configure secure session parameters before starting the session
+// Konfigurer sikre session-parametere før session startes
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_samesite', 'Strict');
 
-// Only start session if one isn't already active
+// Start session hvis en ikke allerede er aktiv
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Constants for rate limiting
-define('MAX_REQUESTS', 60);  // Maximum number of requests allowed per window
-define('TIME_WINDOW', 60);    // Time window in seconds (1 minute)
-define('BLOCK_TIME', 30);    // Block time in seconds (5 minutes)
+// Konstanter for rate limiting
+define('MAX_REQUESTS', 60);  // Maksimal antall forespørsler per vindu
+define('TIME_WINDOW', 60);    // Tidsvindu i sekunder (1 minutt)
+define('BLOCK_TIME', 30);    // Blokkeringstid i sekunder (5 minutter)
 
 class RateLimiter {
     private $ip;
@@ -28,7 +28,7 @@ class RateLimiter {
         $this->current_time = time();
     }
 
-    // Check if the IP is currently rate limited
+    // Sjekk om IP-en er nåværende rate limited
     public function isLimited() {
         $requests = $this->getRequests();
         
@@ -36,17 +36,17 @@ class RateLimiter {
             return false;
         }
 
-        // Check if IP is blocked
+        // Sjekk om IP-en er blokkert
         if (isset($requests['blocked_until']) && $requests['blocked_until'] > $this->current_time) {
             return true;
         }
 
-        // Clean old requests outside the time window
+        // Rens gamle forespørsler utenfor tidsvinduet
         $requests['timestamps'] = array_filter($requests['timestamps'], function($timestamp) {
             return $timestamp > ($this->current_time - TIME_WINDOW);
         });
 
-        // If too many requests in the time window, block the IP
+        // Hvis for mange forespørsler i tidsvinduet, blokker IP-en
         if (count($requests['timestamps']) >= MAX_REQUESTS) {
             $this->blockIP();
             return true;
@@ -55,7 +55,7 @@ class RateLimiter {
         return false;
     }
 
-    // Record a new request
+    // Registrer en ny forespørsel
     public function recordRequest() {
         $requests = $this->getRequests();
 
@@ -66,18 +66,18 @@ class RateLimiter {
             ];
         }
 
-        // Clean old requests
+        // Rens gamle forespørsler
         $requests['timestamps'] = array_filter($requests['timestamps'], function($timestamp) {
             return $timestamp > ($this->current_time - TIME_WINDOW);
         });
 
-        // Add new request timestamp
+        // Legg til ny forespørselstidspunkt
         $requests['timestamps'][] = $this->current_time;
 
         $this->storeRequests($requests);
     }
 
-    // Get remaining requests allowed
+    // Hent gjenstående forespørsler
     public function getRemainingRequests() {
         $requests = $this->getRequests();
         
@@ -85,7 +85,7 @@ class RateLimiter {
             return MAX_REQUESTS;
         }
 
-        // Clean old requests
+        // Rens gamle forespørsler
         $requests['timestamps'] = array_filter($requests['timestamps'], function($timestamp) {
             return $timestamp > ($this->current_time - TIME_WINDOW);
         });
@@ -93,7 +93,7 @@ class RateLimiter {
         return MAX_REQUESTS - count($requests['timestamps']);
     }
 
-    // Get remaining block time
+    // Hent gjenstående blokkeringstid
     public function getRemainingBlockTime() {
         $requests = $this->getRequests();
         
@@ -105,14 +105,14 @@ class RateLimiter {
         return $remaining > 0 ? $remaining : 0;
     }
 
-    // Block the IP
+    // Blokker IP-en
     private function blockIP() {
         $requests = $this->getRequests() ?? ['timestamps' => []];
         $requests['blocked_until'] = $this->current_time + BLOCK_TIME;
         $this->storeRequests($requests);
     }
 
-    // Get stored requests for the IP
+    // Hent lagrede forespørsler for IP-en
     private function getRequests() {
         if (!isset($_SESSION['rate_limits'][$this->ip])) {
             return null;
@@ -120,7 +120,7 @@ class RateLimiter {
         return $_SESSION['rate_limits'][$this->ip];
     }
 
-    // Store requests for the IP
+    // Lagre forespørsler for IP-en
     private function storeRequests($requests) {
         if (!isset($_SESSION['rate_limits'])) {
             $_SESSION['rate_limits'] = [];
@@ -129,15 +129,15 @@ class RateLimiter {
     }
 }
 
-// Function to apply rate limiting to a page
+// Funksjon for å bruke rate limiting på  en side
 function apply_rate_limit() {
     $rate_limiter = new RateLimiter();
     
     if ($rate_limiter->isLimited()) {
-        http_response_code(429); // Too Many Requests
+        http_response_code(429); // For mange forespørsler
         $remaining_time = $rate_limiter->getRemainingBlockTime();
         die(json_encode([
-            'error' => 'Too many requests',
+            'error' => 'For mange forespørsler',
             'message' => "You have exceeded the request limit. Please try again in {$remaining_time} seconds.",
             'retry_after' => $remaining_time
         ]));
@@ -145,7 +145,7 @@ function apply_rate_limit() {
     
     $rate_limiter->recordRequest();
     
-    // Add rate limit headers
+    // Legg til rate limit headers
     header('X-RateLimit-Limit: ' . MAX_REQUESTS);
     header('X-RateLimit-Remaining: ' . $rate_limiter->getRemainingRequests());
     header('X-RateLimit-Reset: ' . (time() + TIME_WINDOW));

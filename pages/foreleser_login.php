@@ -2,6 +2,9 @@
 require_once '../lib/rate_limiter.php';
 apply_rate_limit();
 
+require_once '../lib/security_headers.php';
+setSecurityHeaders();
+
 session_start();
 ?>
 <!DOCTYPE html>

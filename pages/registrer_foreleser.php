@@ -1,3 +1,7 @@
+<?php
+require_once '../lib/security_headers.php';
+setSecurityHeaders();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
