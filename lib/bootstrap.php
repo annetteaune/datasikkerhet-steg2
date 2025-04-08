@@ -16,4 +16,4 @@
  */
 
 require_once __DIR__ . '/../api/includes/bootstrap.php';
-require_once __DIR__ . '/../api/includes/Database.php';
+require_once __DIR__ . '/db.php';
