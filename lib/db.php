@@ -74,21 +74,33 @@ class Database
      */
     public static function getConnection(string $role = 'guest'): \mysqli
     {
+        error_log("Attempting to get database connection for role: " . $role);
+        
         if (!array_key_exists($role, self::DB_USERS)) {
+            error_log("Invalid role specified: " . $role . ". Defaulting to guest.");
             $role = 'guest'; // Default role if invalid role is specified
         }
 
         $user = self::DB_USERS[$role]['username'];
         $password = self::DB_USERS[$role]['password'];
 
-        $conn = new \mysqli(self::HOST, $user, $password, self::DBNAME);
+        error_log("Connecting to database with user: " . $user);
+        
+        try {
+            $conn = new \mysqli(self::HOST, $user, $password, self::DBNAME);
 
-        if ($conn->connect_error) {
-            error_log("Database connection failed: " . $conn->connect_error);
-            throw new \Exception("Database connection failed. Please try again later.");
+            if ($conn->connect_error) {
+                error_log("Database connection failed: " . $conn->connect_error);
+                throw new \Exception("Database connection failed: " . $conn->connect_error);
+            }
+
+            error_log("Database connection successful");
+            return $conn;
+        } catch (\Exception $e) {
+            error_log("Database connection error: " . $e->getMessage());
+            error_log("Connection details: HOST=" . self::HOST . ", USER=" . $user . ", DB=" . self::DBNAME);
+            throw $e;
         }
-
-        return $conn;
     }
 
     /**

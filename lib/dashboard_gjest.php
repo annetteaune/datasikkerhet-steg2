@@ -25,13 +25,26 @@ use CleanSteg1\Database\Database;
 
 applyRateLimit();
 
+// Configure session settings
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Lax');
+
+// Only set secure flag if HTTPS is enabled
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('session.cookie_secure', 1);
+}
+
 // Starte session
 session_start();
 
+// Add error logging
+error_log("Guest dashboard accessed. Session data: " . json_encode($_SESSION));
+
 // Sjekk om gjest er innlogget
 if (!isset($_SESSION['gjest_id'])) {
-    // ikke innlogget, redirect til login-side
-    header("Location: ../pages/login.php");
+    error_log("No gjest_id in session - redirecting to login");
+    header("Location: /steg2/pages/login.php");
     exit();
 }
 
@@ -148,13 +161,15 @@ try {
                                     <h3><?php echo htmlspecialchars($row['emne_navn']); ?></h3>
                                 <?php endif; ?>
 
-                                <?php if (isset($row['innhold']) && $row['innhold']) : ?>
-                                    <p><?php echo nl2br(htmlspecialchars($row['innhold'])); ?></p>
+                                <?php if (isset($row['melding_innhold']) && $row['melding_innhold']) : ?>
+                                    <p class="message-content">
+                                        <?php echo nl2br(htmlspecialchars($row['melding_innhold'])); ?>
+                                    </p>
                                 <?php endif; ?>
 
-                                <?php if (isset($row['dato']) && $row['dato']) : ?>
+                                <?php if (isset($row['melding_tidspunkt']) && $row['melding_tidspunkt']) : ?>
                                     <small>
-                                        Sendt: <?php echo htmlspecialchars($row['dato']); ?>
+                                        Sendt: <?php echo htmlspecialchars($row['melding_tidspunkt']); ?>
                                     </small>
                                 <?php endif; ?>
 
@@ -163,9 +178,9 @@ try {
                                         <p>
                                             <?php echo nl2br(htmlspecialchars($row['svar_innhold'])); ?>
                                         </p>
-                                        <?php if (isset($row['svar_dato'])) : ?>
+                                        <?php if (isset($row['svar_tidspunkt'])) : ?>
                                             <small>
-                                                Besvart: <?php echo htmlspecialchars($row['svar_dato']); ?>
+                                                Besvart: <?php echo htmlspecialchars($row['svar_tidspunkt']); ?>
                                             </small>
                                             <br>
                                         <?php endif; ?>

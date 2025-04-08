@@ -1,11 +1,21 @@
 <?php
 
+// Configure session settings
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Lax');  // Changed from Strict to Lax for better compatibility
+// Removed session.cookie_secure since we're using HTTP
+
 session_start();
+
+// Add error logging
+error_log("Dashboard accessed. Session data: " . json_encode($_SESSION));
 
 // Sjekk om innlogget
 if (!isset($_SESSION['student_fname'])) {
+    error_log("No student_fname in session - redirecting to login");
     // Hvis ikke, redirect til login
-    header("Location: ../pages/login.php");
+    header("Location: /steg2/pages/login.php");
     exit();
 }
 
@@ -50,7 +60,7 @@ try {
     if (isset($conn)) {
         Database::closeConnection($conn);
     }
-    header("Location: ../pages/error.php");
+    header("Location: /steg2/pages/error.php");
     exit();
 }
 ?>

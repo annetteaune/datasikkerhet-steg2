@@ -1,12 +1,20 @@
 <?php
 
-// Konfigurer sikre session-parametre før session start
+// Configure session settings
 ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_samesite', 'Lax');
+
+// Only set secure flag if HTTPS is enabled
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('session.cookie_secure', 1);
+}
 
 session_start();
+
+error_log("Starting guest login process");
+error_log("Session started");
+
 require_once 'db.php';
 
 use CleanSteg1\Database\Database;
@@ -65,8 +73,11 @@ try {
     $_SESSION['foreleser_bilde'] = $data['foreleser_bilde'];
     $_SESSION['user_type'] = 'guest';
 
+    error_log("Guest session variables set: " . json_encode($_SESSION));
+
     // Regenerer session ID for å forhindre session-fiksering
     session_regenerate_id(true);
+    error_log("Session ID regenerated");
 
     // 6. Lukk databaseforbindelse
     Database::closeConnection($conn);
