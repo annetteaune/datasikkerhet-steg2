@@ -3,17 +3,13 @@
 // Configure session settings
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_secure', 1);
 
-// Only set secure flag if HTTPS is enabled
-if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-    ini_set('session.cookie_secure', 1);
-}
 
 session_start();
 
-error_log("Starting guest login process");
-error_log("Session started");
+
 
 require_once 'db.php';
 

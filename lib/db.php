@@ -75,7 +75,7 @@ class Database
     public static function getConnection(string $role = 'guest'): \mysqli
     {
         error_log("Attempting to get database connection for role: " . $role);
-        
+
         if (!array_key_exists($role, self::DB_USERS)) {
             error_log("Invalid role specified: " . $role . ". Defaulting to guest.");
             $role = 'guest'; // Default role if invalid role is specified
@@ -85,7 +85,7 @@ class Database
         $password = self::DB_USERS[$role]['password'];
 
         error_log("Connecting to database with user: " . $user);
-        
+
         try {
             $conn = new \mysqli(self::HOST, $user, $password, self::DBNAME);
 

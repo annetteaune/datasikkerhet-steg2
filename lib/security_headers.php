@@ -26,7 +26,7 @@ function setSecurityHeaders()
 {
     // Forhindre clickjacking
     header('X-Frame-Options: DENY');
-// Aktiver browser's XSS-beskyttelse
+// Aktiver nettleserens XSS-beskyttelse
     header('X-XSS-Protection: 1; mode=block');
 // Forhindre MIME-type-sniffing
     header('X-Content-Type-Options: nosniff');
@@ -38,7 +38,7 @@ function setSecurityHeaders()
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 // Kontroller referrer-informasjon
     header('Referrer-Policy: strict-origin-when-cross-origin');
-// Forhindre caching av følsomme sider
+// Forhindre caching
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
 }

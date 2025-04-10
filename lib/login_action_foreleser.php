@@ -1,17 +1,16 @@
 <?php
 
 // Aktiver feilmelding for debugging (fjern i produksjon)
-error_reporting(E_ALL);
+//error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Konfigurer sikre session-parametre før session start
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Lax');  // Changed from Strict to Lax for better compatibility
-// Removed session.cookie_secure since we're using HTTP
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_secure', 1);
 
-// Add detailed logging
-error_log("Starting lecturer login process");
+
 
 // Starte session
 session_start();
