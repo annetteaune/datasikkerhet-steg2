@@ -1,14 +1,29 @@
 <?php
 
-// Configure session settings
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Strict');
-ini_set('session.cookie_secure', 1);
+/**
+ * Dashboard
+ *
+ * Main dashboard file for student interface
+ */
+
 
 session_start();
 
 
+require_once __DIR__ . '/bootstrap.php';
+
+
+header('Content-Type: text/html; charset=utf-8');
+
+
+mb_internal_encoding('UTF-8');
+mb_http_output('UTF-8');
+
+//  session settings
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_secure', 1);
 
 // Sjekk om innlogget
 if (!isset($_SESSION['student_fname'])) {
@@ -67,6 +82,7 @@ try {
 <html lang="no">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="../styling.css">

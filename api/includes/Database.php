@@ -41,24 +41,24 @@ use Exception;
 class Database
 {
     /**
-     * Active database connections for different roles
+     * Aktive databaseforbindelser for ulike roller
      *
-     * @var array<mixed> Database connections
+     * @var array<mixed> Databaseforbindelser
      */
     private static array $connections = [];
 
     /**
-     * Database configuration settings for different roles
+     * Database config settings for ulike roller
      *
-     * @var array<mixed> Database configuration
+     * @var array<mixed> Database configs
      */
     private static array $config = [];
 
     /**
-     * Initializes the database configuration settings
+     * Init databaseconfig
      *
-     * Loads and sets up the configuration for different database roles
-     * if not already initialized.
+     * Laster inn og oppretter konfigurasjonen for ulike databaseroller
+     * hvis den ikke allerede er initialisert.
      *
      * @return void
      */
@@ -68,21 +68,21 @@ class Database
             self::$config = [
                 'student' => [
                     'host' => getenv('DB_HOST'),
-                    'user' => 'db2_student',
-                    'pass' => 'student_pass',
-                    'db'   => 'db2'
+                    'user' => getenv('DB_STUDENT_USER') ?: 'db2_student',
+                    'pass' => getenv('DB_STUDENT_PASS') ?: 'student_pass',
+                    'db'   => getenv('DB_NAME') ?: 'db2'
                 ],
                 'lecturer' => [
                     'host' => getenv('DB_HOST'),
-                    'user' => 'db2_lecturer',
-                    'pass' => 'lecturer_pass',
-                    'db'   => 'db2'
+                    'user' => getenv('DB_LECTURER_USER') ?: 'db2_lecturer',
+                    'pass' => getenv('DB_LECTURER_PASS') ?: 'lecturer_pass',
+                    'db'   => getenv('DB_NAME') ?: 'db2'
                 ],
                 'guest' => [
                     'host' => getenv('DB_HOST'),
-                    'user' => 'db2_guest',
-                    'pass' => 'guest_pass',
-                    'db'   => 'db2'
+                    'user' => getenv('DB_GUEST_USER') ?: 'db2_guest',
+                    'pass' => getenv('DB_GUEST_PASS') ?: 'guest_pass',
+                    'db'   => getenv('DB_NAME') ?: 'db2'
                 ],
                 'api' => [
                     'host' => getenv('DB_HOST'),
@@ -91,6 +91,17 @@ class Database
                     'db'   => getenv('DB_NAME')
                 ]
             ];
+
+            // Logge konfigurasjonen
+            foreach (self::$config as $role => $config) {
+                error_log(sprintf(
+                    'Database config for %s: host=%s, user=%s, db=%s',
+                    $role,
+                    $config['host'],
+                    $config['user'],
+                    $config['db']
+                ));
+            }
         }
     }
 
@@ -103,45 +114,46 @@ class Database
     }
 
     /**
-     * Gets a database connection for a specific role
+     * Henter en databaseforbindelse for en bestemt rolle
      *
-     * @param string $role User role (student, lecturer, guest, api)
+     * @param string $role Brukerrolle (student, lecturer, guest, api)
      *
-     * @throws Exception If connection fails
-     * @return mysqli   Database connection
+     * @throws Exception Om forbindelsen mislykkes
+     * @return mysqli   Databaseforbindelse
      */
     public static function getConnection(string $role = 'api'): mysqli
     {
         self::initConfig();
 
         try {
-            // Validate role
+            // Valider rolle
             if (!isset(self::$config[$role])) {
+                error_log("Invalid database role requested: " . $role);
                 throw new Exception("Invalid database role: $role");
             }
 
-            // Return existing connection if valid
+            // Return eksisterende forbindelse hvis gyldig
             if (isset(self::$connections[$role])) {
                 $conn = self::$connections[$role];
                 if ($conn->ping()) {
                     return $conn;
                 }
-                // Close invalid connection
+                // CLukker stale forbindelse
+                error_log("Closing stale connection for role: " . $role);
                 $conn->close();
                 unset(self::$connections[$role]);
             }
 
-            // Create new connection
+            // Opprett ny forbindelse
             $config = self::$config[$role];
 
-            // Log connection attempt
-            error_log(
-                sprintf(
-                    'Attempting to connect to database with user: %s@%s',
-                    $config['user'],
-                    $config['host']
-                )
-            );
+            // Logg forbindelsesforsøk
+            error_log(sprintf(
+                'Attempting to connect to database with user: %s@%s for role: %s',
+                $config['user'],
+                $config['host'],
+                $role
+            ));
 
             $conn = new mysqli(
                 $config['host'],
@@ -150,9 +162,9 @@ class Database
                 $config['db']
             );
 
-            // Check for connection errors
+            // Sjekk for forbindelsesfeil
             if ($conn->connect_error) {
-                error_log("Connection error: " . $conn->connect_error);
+                error_log("Connection error for role " . $role . ": " . $conn->connect_error);
                 throw new Exception("Connection error: " . $conn->connect_error);
             }
 
@@ -163,15 +175,10 @@ class Database
             // Store the connection
             self::$connections[$role] = $conn;
 
-            error_log(
-                sprintf(
-                    'Successfully connected to database with user: %s',
-                    $config['user']
-                )
-            );
+            error_log("Successfully connected to database for role: " . $role);
             return $conn;
         } catch (Exception $e) {
-            error_log("Database connection error: " . $e->getMessage());
+            error_log("Database connection error for role " . $role . ": " . $e->getMessage());
             throw new Exception(
                 "Could not establish database connection: " . $e->getMessage()
             );
@@ -179,15 +186,15 @@ class Database
     }
 
     /**
-     * Executes an SQL query
+     * Utfører en SQL-forespørsel
      *
-     * @param string       $role   User role
-     * @param string       $query  SQL query
-     * @param array<mixed> $params Query parameters
-     * @param string       $types  Parameter types (i, s, d, b)
+     * @param string       $role   Brukerrolle
+     * @param string       $query  SQL-forespørsel
+     * @param array<mixed> $params Forespørselsparametre
+     * @param string       $types  Parametertyper (i, s, d, b)
      *
-     * @throws Exception    If query fails
-     * @return mysqli_result Query result
+     * @throws Exception    Om forespørselen mislykkes
+     * @return mysqli_result SQL-forespørselens resultat
      */
     public function executeQuery(
         string $role,
@@ -222,15 +229,15 @@ class Database
     }
 
     /**
-     * Executes a stored procedure
+     * Utfører en lagret prosedyre
      *
-     * @param string       $role      User role
-     * @param string       $procedure Procedure name
-     * @param array<mixed> $params    Procedure parameters
-     * @param string       $types     Parameter types (i, s, d, b)
+     * @param string       $role      Brukerrolle
+     * @param string       $procedure Prosedyrenavn
+     * @param array<mixed> $params    Prosedyreparametre
+     * @param string       $types     Parametertyper (i, s, d, b)
      *
-     * @throws Exception    If procedure fails
-     * @return mysqli_result Procedure result
+     * @throws Exception    Om prosedyren mislykkes
+     * @return mysqli_result Prosedyreresultat
      */
     public function executeStoredProcedure(
         string $role,
@@ -272,7 +279,7 @@ class Database
     }
 
     /**
-     * Closes all database connections
+     * Lukker alle databaseforbindelser
      *
      * @return void
      */

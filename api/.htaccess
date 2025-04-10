@@ -1,7 +1,10 @@
+# Enable rewrite engine
 RewriteEngine On
-RewriteBase /cleanSteg1/api/
 
-# Redirect /api til api.html
+# Set the correct base path for the server
+RewriteBase /HearMeOut/steg2/api/
+
+# Redirect root to api.html
 RewriteRule ^$ api.html [L]
 
 # Ensure the request isn't for a real file or directory
@@ -11,11 +14,24 @@ RewriteCond %{REQUEST_FILENAME} !-d
 # Handle API requests
 RewriteRule ^(.*)$ index.php [L,QSA]
 
-# Enable CORS
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+# Enable CORS if mod_headers is available
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
 
-# Enable error logging
+# error log
 php_flag log_errors on
-php_value error_log "C:/xampp/php/logs/php_error.log"
+php_value error_log /var/log/apache2/api_error.log
+
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .php .json
+
+# Force UTF-8 for certain content types
+AddType 'application/json; charset=UTF-8' .json
+
+<IfModule mod_headers.c>
+    # Force UTF-8 for JSON responses
+    Header set Content-Type "application/json; charset=UTF-8" env=json
+</IfModule>

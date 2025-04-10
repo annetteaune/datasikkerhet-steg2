@@ -37,12 +37,12 @@ class Database
     private const HOST = "localhost";
 
     /**
-     * Database name
+     * Database navn
      */
     private const DBNAME = "db2";
 
     /**
-     * Database users configuration
+     * Database brukerkonfigurasjon
      */
     private const DB_USERS = [
         'admin' => [
@@ -64,13 +64,13 @@ class Database
     ];
 
     /**
-     * Get database connection based on role
+     * Hent databaseforbindelse basert på rolle
      *
-     * @param string $role User role (admin, student, lecturer, guest)
+     * @param string $role Brukerrolle (admin, student, foreleser, gjest)
      *
-     * @return \mysqli Database connection
+     * @return \mysqli Databaseforbindelse
      *
-     * @throws \Exception If connection fails
+     * @throws \Exception Om forbindelsen mislykkes
      */
     public static function getConnection(string $role = 'guest'): \mysqli
     {
@@ -78,7 +78,7 @@ class Database
 
         if (!array_key_exists($role, self::DB_USERS)) {
             error_log("Invalid role specified: " . $role . ". Defaulting to guest.");
-            $role = 'guest'; // Default role if invalid role is specified
+            $role = 'guest'; // Default rolle hvis ugyldig rolle er spesifisert
         }
 
         $user = self::DB_USERS[$role]['username'];
@@ -94,6 +94,10 @@ class Database
                 throw new \Exception("Database connection failed: " . $conn->connect_error);
             }
 
+            $conn->set_charset("utf8mb4");
+            $conn->query("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $conn->query("SET CHARACTER SET utf8mb4");
+
             error_log("Database connection successful");
             return $conn;
         } catch (\Exception $e) {
@@ -104,9 +108,9 @@ class Database
     }
 
     /**
-     * Close database connection
+     * Lukk databaseforbindelse
      *
-     * @param \mysqli $conn Database connection to close
+     * @param \mysqli $conn Databaseforbindelse som skal lukkes
      *
      * @return void
      */
@@ -118,36 +122,36 @@ class Database
     }
 
     /**
-     * Validate password strength according to security requirements
-     * - Minimum 8 characters
-     * - At least one uppercase letter
-     * - At least one number
-     * - At least one special character
+     * Valider passordstyrke etter sikkerhetskrav
+     * - Minimum 8 tegn
+     * - Minst én stor bokstav
+     * - Minst étt tall
+     * - Minst ét spesialtegn
      *
-     * @param string $password Password to validate
+     * @param string $password Passord som skal valideres
      *
-     * @return array{valid: bool, message: string} Validation result
+     * @return array{valid: bool, message: string} Valideringsresultat
      */
     public static function validatePassword(string $password): array
     {
         $errors = [];
 
-        // Check minimum length
+        // Sjekk minimum lengde
         if (strlen($password) < 8) {
             $errors[] = "Passordet må være minst 8 tegn langt.";
         }
 
-        // Check for uppercase letter
+        // Sjekk for stor bokstav
         if (!preg_match('/[A-Z]/', $password)) {
             $errors[] = "Passordet må inneholde minst én stor bokstav.";
         }
 
-        // Check for number
+        // Sjekk for tall
         if (!preg_match('/[0-9]/', $password)) {
             $errors[] = "Passordet må inneholde minst ett tall.";
         }
 
-        // Check for special character
+        // Sjekk for spesialtegn
         if (!preg_match('/[^A-Za-z0-9]/', $password)) {
             $errors[] = "Passordet må inneholde minst ett spesialtegn.";
         }

@@ -15,8 +15,8 @@
  * @link       https://github.com/yourusername/cleanSteg1
  */
 
-// Disable error reporting for notices and warnings in production
-error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
+// Slå av i produksjon
+//error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
 
 require_once __DIR__ . '/../lib/security_headers.php';
@@ -41,12 +41,21 @@ use CleanSteg1\API\{
     BLOCK_TIME
 };
 
-// Set security headers
+// Sett security headers
 setSecurityHeaders();
-// Set CORS headers for API endpoints
+// Sett CORS headers for API endepunkter
 setCORSHeaders(true);
 
-header('Content-Type: application/json');
+// Sørg for riktig innkoding
+mb_internal_encoding('UTF-8');
+
+// Sett riktig innholdstype og tegnsett
+header('Content-Type: application/json; charset=utf-8');
+
+// Tillat CORS
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
 $db = new Database();
 $conn = $db->getConnection('api');
@@ -62,7 +71,7 @@ error_log("Method: " . $method);
 error_log("Endpoint: " . $endpoint);
 error_log("Subresource: " . $subresource);
 
-// Handle CORS preflight requests
+// Håndter CORS preflight-forespørsler
 if ($method === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -273,7 +282,9 @@ try {
             throw new Exception('Ugyldig endepunkt');
     }
 
-    echo json_encode($response);
+    // Sørg for riktig JSON-koding av spesialtegn
+    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
 } catch (Exception $e) {
     error_log("API Feil: " . $e->getMessage());
     http_response_code(400);

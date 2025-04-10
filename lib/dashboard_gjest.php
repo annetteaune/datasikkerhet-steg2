@@ -16,6 +16,18 @@
  * @link       https://github.com/yourusername/cleanSteg1
  */
 
+session_start();
+
+
+require_once __DIR__ . '/bootstrap.php';
+
+
+header('Content-Type: text/html; charset=utf-8');
+
+
+mb_internal_encoding('UTF-8');
+mb_http_output('UTF-8');
+
 require_once 'rate_limiter.php';
 require_once 'db.php';
 
@@ -25,17 +37,13 @@ use CleanSteg1\Database\Database;
 
 applyRateLimit();
 
-// Configure session settings
+//  session settings
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.cookie_secure', 1);
 
-
-// Starte session
-session_start();
-
-// Add error logging
+//  error logging
 error_log("Guest dashboard accessed. Session data: " . json_encode($_SESSION));
 
 // Sjekk om gjest er innlogget

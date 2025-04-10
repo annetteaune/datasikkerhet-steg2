@@ -1,13 +1,29 @@
 <?php
 
-// Configure session settings
+/**
+ * Lecturer Dashboard
+ *
+ * Dashboard interface for lecturers
+ */
+
+// Start session
+session_start();
+
+// Last inn bootstrap
+require_once __DIR__ . '/bootstrap.php';
+
+// Sørg for riktig innholdstype og kodning for denne filen
+header('Content-Type: text/html; charset=utf-8');
+
+// Tving UTF-8 for utskrifter
+mb_internal_encoding('UTF-8');
+mb_http_output('UTF-8');
+
+// Konfigurer sessioninnstillinger
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.cookie_secure', 1);
-session_start();
-
-
 
 // Sjekk om innlogget
 if (!isset($_SESSION['foreleser_fname'])) {

@@ -15,5 +15,17 @@
  * @link       https://github.com/yourusername/cleanSteg1
  */
 
-require_once __DIR__ . '/../api/includes/bootstrap.php';
+declare(strict_types=1);
+
+require_once __DIR__ . '/security_headers.php';
+
+
 require_once __DIR__ . '/db.php';
+
+
+date_default_timezone_set('Europe/Oslo');
+
+
+header('Content-Type: text/html; charset=utf-8');
+
+require_once __DIR__ . '/../api/includes/bootstrap.php';
