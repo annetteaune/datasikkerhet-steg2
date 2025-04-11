@@ -74,24 +74,25 @@ nav {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 5rem;
-  max-width: 60%;
+  max-width: 80%;
   margin: 0 auto;
 }
 
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   align-items: center;
 }
 
-.nav-links a {
+.nav-links li a {
   color: var(--text-color);
   text-decoration: none;
   font-weight: 500;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0;
   border-radius: var(--radius);
   transition: all 0.2s ease;
+  width: 100%;
 }
 
 .nav-links a:hover {
