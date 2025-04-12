@@ -1,5 +1,8 @@
 <?php
 
+// Apply security measures first
+require_once 'security.php';
+
 // Aktiver feilmelding for debugging (fjern i produksjon)
 //error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -17,17 +20,24 @@ session_start();
 error_log("Session started");
 
 // Inkluder nødvendige filer
-require_once 'db.php';
+require_once 'bootstrap.php';
 require_once 'login_attempts.php';
 
 use CleanSteg1\Database\Database;
-use CleanSteg1\Security\LoginAttempts;
+use function CleanSteg1\Security\{check_rate_limit, record_failed_attempt,
+    reset_login_attempts, sanitize_input, validate_email};
+
+error_log("Required files loaded");
 
 // Sjekk om formen ble sendt via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    error_log("POST request received");
+
     try {
         // Sjekk rate limiting først
         $rate_limit = check_rate_limit();
+        error_log("Rate limit check completed: " . json_encode($rate_limit));
+
         if ($rate_limit['locked']) {
             throw new Exception("For mange innloggingsforsøk. Vennligst prøv igjen om "
                 . $rate_limit['time_remaining'] . " minutter.");
@@ -36,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Hent og valider input
         $email = sanitize_input($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
+        error_log("Input received - Email: " . $email);
 
         if (empty($email) || empty($password)) {
             throw new Exception("Vennligst fyll ut alle felt.");
@@ -49,77 +60,90 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Valider passord
         $password_validation = Database::validatePassword($password);
         if (!$password_validation['valid']) {
-            $_SESSION['error'] = $password_validation['message'];
-            header("Location: ../pages/foreleser_login.php");
+            record_failed_attempt($_SERVER['REMOTE_ADDR']);
+            $_SESSION['error'] = "Ugyldig epost eller passord";
+            header("Location: /steg2/pages/foreleser_login.php");
             exit();
         }
 
         // Opprett databasetilkobling
-        $conn = Database::getConnection('guest');
+        error_log("Attempting database connection with API role");
+        $conn = Database::getConnection('api');
+        error_log("Database connection established");
 
         // Kall login_lecturer-prosedyren
         $stmt = $conn->prepare("CALL login_lecturer(?)");
         if (!$stmt) {
-            throw new Exception("Database query failed: " . $conn->error);
+            error_log("Database prepare failed: " . $conn->error);
+            record_failed_attempt($_SERVER['REMOTE_ADDR']);
+            throw new Exception("Ugyldig epost eller passord");
         }
 
         $stmt->bind_param("s", $email);
+        error_log("Executing login_lecturer procedure");
         $stmt->execute();
         $result = $stmt->get_result();
+        error_log("Query executed. Num rows: " . $result->num_rows);
 
         if ($result->num_rows === 0) {
-            // Registrer mislykket forsøk
             record_failed_attempt($_SERVER['REMOTE_ADDR']);
-            throw new Exception("Ugyldig e-post eller passord.");
+            throw new Exception("Ugyldig epost eller passord");
         }
 
         $user = $result->fetch_assoc();
+        error_log("User data retrieved: " . json_encode($user));
 
         // Verifiser passord ved hjelp av Argon2
         if (!password_verify($password, $user['passord'])) {
-            // Registrer mislykket forsøk
+            error_log("Password verification failed");
             record_failed_attempt($_SERVER['REMOTE_ADDR']);
-            throw new Exception("Ugyldig e-post eller passord.");
+            throw new Exception("Ugyldig epost eller passord");
         }
 
-        // Nullstill innloggingsforsøk ved vellykket innlogging
+        error_log("Password verified successfully");
+        // Reset login-forsøk ved vellykket innlogging
         reset_login_attempts($_SERVER['REMOTE_ADDR']);
 
-        // Set session variabler med navn som matcher dashboard-forventninger
+        // Set session variabler
         $_SESSION['foreleser_id'] = $user['bruker_id'];
         $_SESSION['foreleser_fname'] = $user['fornavn'];
         $_SESSION['foreleser_lname'] = $user['etternavn'];
         $_SESSION['foreleser_email'] = $user['epost'];
         $_SESSION['user_type'] = $user['user_type'];
 
+        error_log("Session variables set: " . json_encode($_SESSION));
+
         // Regenerér session ID for å forhindre session-fiksere
         session_regenerate_id(true);
+        error_log("Session ID regenerated");
 
         // Lukk db-tilkoblinger
         $stmt->close();
-        $conn->close();
+        Database::closeConnection($conn);
 
+        error_log("Redirecting to dashboard");
         // Omdiriger til dashboard
-        header("Location: dashboard_foreleser.php");
+        header("Location: /steg2/lib/dashboard_foreleser.php");
         exit();
     } catch (Exception $e) {
         error_log("Login error: " . $e->getMessage());
-
+        error_log("Stack trace: " . $e->getTraceAsString());
         // Lukk db-tilkoblinger hvis de eksisterer
         if (isset($stmt)) {
             $stmt->close();
         }
         if (isset($conn)) {
-            $conn->close();
+            Database::closeConnection($conn);
         }
 
         // Omdiriger tilbake med feilmelding
-        $_SESSION['error_message'] = $e->getMessage();
-        header("Location: ../pages/foreleser_login.php");
+        $_SESSION['error'] = $e->getMessage();
+        header("Location: /steg2/pages/foreleser_login.php");
         exit();
     }
 } else {
+    error_log("Non-POST request received");
     // Hvis ikke POST-forespørsel, omdiriger til login-side
-    header("Location: ../pages/login.php");
+    header("Location: /steg2/pages/login.php");
     exit();
 }

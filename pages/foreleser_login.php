@@ -10,9 +10,10 @@ setSecurityHeaders();
 session_start();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Foreleser innlogging - HearMeOut</title>
     <link rel="stylesheet" href="../styling.css"> 
@@ -33,16 +34,16 @@ session_start();
         <div class="hero-section">
             <div class="container">
                 <h1 class="hero-title">Foreleser innlogging</h1>
-                <p class="hero-text">Logg inn for å administrere dine emner</p>
+                <p class="hero-text">Logg inn for å få tilgang til dine emner</p>
             </div>
         </div>
 
         <div class="form-container">
-            <?php if (isset($_SESSION['error_message'])) : ?>
+            <?php if (isset($_SESSION['error'])) : ?>
                 <div class="error-message">
                     <?php
-                    echo htmlspecialchars($_SESSION['error_message']);
-                    unset($_SESSION['error_message']); // Fjern feilmeldingen etter visning
+                    echo $_SESSION['error'];
+                    unset($_SESSION['error']); // Fjern feilmeldingen etter visning
                     ?>
                 </div>
             <?php endif; ?>

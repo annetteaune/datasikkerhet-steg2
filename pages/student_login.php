@@ -1,19 +1,12 @@
 <?php
-require_once '../lib/rate_limiter.php';
-use CleanSteg1\Security\RateLimiter;
-use function CleanSteg1\Security\applyRateLimit;
-
-applyRateLimit();
-
-require_once '../lib/security_headers.php';
-setSecurityHeaders();
-
+require_once '../lib/security.php';
 session_start();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student innlogging - HearMeOut</title>
     <link rel="stylesheet" href="../styling.css"> 
@@ -39,11 +32,11 @@ session_start();
         </div>
 
         <div class="form-container">
-            <?php if (isset($_SESSION['error_message'])) : ?>
+            <?php if (isset($_SESSION['error'])) : ?>
                 <div class="error-message">
                     <?php
-                    echo htmlspecialchars($_SESSION['error_message']);
-                    unset($_SESSION['error_message']); // Fjern feilmeldingen etter visning
+                    echo $_SESSION['error'];
+                    unset($_SESSION['error']); // Fjern feilmeldingen etter visning
                     ?>
                 </div>
             <?php endif; ?>

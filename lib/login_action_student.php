@@ -1,5 +1,8 @@
 <?php
 
+// Apply security measures first
+require_once 'security.php';
+
 // Aktiver feilmelding for debugging (fjern i produksjon)
 //error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -19,13 +22,15 @@ require_once 'bootstrap.php';
 require_once 'login_attempts.php';
 
 use CleanSteg1\Database\Database;
-use CleanSteg1\Security\LoginAttempts;
+use function CleanSteg1\Security\{check_rate_limit, record_failed_attempt,
+    reset_login_attempts, sanitize_input, validate_email};
 
 error_log("Required files loaded");
 
 // Sjekk om formen ble sendt via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     error_log("POST request received");
+
     try {
         // Sjekk rate limiting først
         $rate_limit = check_rate_limit();
@@ -53,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Valider passord
         $password_validation = Database::validatePassword($password);
         if (!$password_validation['valid']) {
-            $_SESSION['error'] = $password_validation['message'];
+            record_failed_attempt($_SERVER['REMOTE_ADDR']);
+            $_SESSION['error'] = "Ugyldig epost eller passord";
             header("Location: /steg2/pages/student_login.php");
             exit();
         }
@@ -67,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $conn->prepare("CALL login_student(?)");
         if (!$stmt) {
             error_log("Database prepare failed: " . $conn->error);
-            throw new Exception("Database query failed: " . $conn->error);
+            record_failed_attempt($_SERVER['REMOTE_ADDR']);
+            throw new Exception("Ugyldig epost eller passord");
         }
 
         $stmt->bind_param("s", $email);
@@ -77,9 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         error_log("Query executed. Num rows: " . $result->num_rows);
 
         if ($result->num_rows === 0) {
-            // Registrer mislykket forsøk
             record_failed_attempt($_SERVER['REMOTE_ADDR']);
-            throw new Exception("Ugyldig e-post eller passord.");
+            throw new Exception("Ugyldig epost eller passord");
         }
 
         $user = $result->fetch_assoc();
@@ -87,14 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Verifiser passord ved hjelp av Argon2
         if (!password_verify($password, $user['passord'])) {
-            // Registrer mislykket forsøk
             error_log("Password verification failed");
             record_failed_attempt($_SERVER['REMOTE_ADDR']);
-            throw new Exception("Ugyldig e-post eller passord.");
+            throw new Exception("Ugyldig epost eller passord");
         }
 
         error_log("Password verified successfully");
-        // Nullstill innloggingsforsøk ved vellykket innlogging
+        // Reset login-forsøk ved vellykket innlogging
         reset_login_attempts($_SERVER['REMOTE_ADDR']);
 
         // Set session variabler med navn som matcher dashboard-forventninger
@@ -130,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Omdiriger tilbake med feilmelding
-        $_SESSION['error_message'] = $e->getMessage();
+        $_SESSION['error'] = $e->getMessage();
         header("Location: /steg2/pages/student_login.php");
         exit();
     }

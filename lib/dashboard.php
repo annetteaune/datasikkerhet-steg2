@@ -6,7 +6,6 @@
  * Main dashboard file for student interface
  */
 
-
 session_start();
 
 
